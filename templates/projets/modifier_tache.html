@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier la tâche</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'IBM Plex Sans', sans-serif; }
+        .mono { font-family: 'IBM Plex Mono', monospace; }
+        .field-input {
+            width: 100%;
+            background: #FAFAF8;
+            border: 1px solid #DEDEDA;
+            padding: 10px 12px;
+            font-size: 0.9rem;
+            color: #1C1C1A;
+        }
+        .field-input:focus {
+            outline: none;
+            border-color: #1C1C1A;
+        }
+    </style>
+</head>
+<body class="bg-[#FAFAF8] text-[#1C1C1A] min-h-screen">
+
+    <div class="max-w-xl mx-auto px-6 py-14">
+
+        <a href="{% url 'liste_tache' tache.id_proj.id %}" class="mono text-xs text-[#8A8A82] hover:text-[#1C1C1A] transition-colors">
+            ← Retour aux tâches
+        </a>
+
+        <div class="mt-6 pb-6 border-b-2 border-[#1C1C1A]">
+            <p class="mono text-xs uppercase tracking-wider text-[#8A8A82] mb-1">Tâche</p>
+            <h1 class="text-2xl font-semibold">{{ tache.intitule }}</h1>
+        </div>
+
+        <form method="POST" class="mt-8 space-y-6">
+            {% csrf_token %}
+
+            <div>
+                <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-2">Intitulé</label>
+                <input type="text" name="intitule" value="{{ tache.intitule }}" class="field-input">
+            </div>
+
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-2">Date</label>
+                    <input type="date" name="date_realisation" value="{{ tache.date_realisation|date:'Y-m-d' }}" class="field-input">
+                </div>
+                <div>
+                    <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-2">Début</label>
+                    <input type="time" name="heure_debut" value="{{ tache.heure_debut|time:'H:i' }}" class="field-input">
+                </div>
+                <div>
+                    <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-2">Fin</label>
+                    <input type="time" name="heure_fin" value="{{ tache.heure_fin|time:'H:i' }}" class="field-input">
+                </div>
+            </div>
+
+            <div>
+                <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-2">Résultat attendu</label>
+                <textarea name="resultat_attendu" rows="4" class="field-input resize-none">{{ tache.resultat_attendu }}</textarea>
+            </div>
+
+            <div>
+                <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-2">Statut</label>
+                <div class="flex gap-2">
+                    <label class="flex-1">
+                        <input type="radio" name="statut" value="a_faire" class="peer sr-only"
+                               {% if tache.statut == "a_faire" %}checked{% endif %}>
+                        <div class="mono text-xs uppercase tracking-wide text-center py-2.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                            À faire
+                        </div>
+                    </label>
+                    <label class="flex-1">
+                        <input type="radio" name="statut" value="en_cours" class="peer sr-only"
+                               {% if tache.statut == "en_cours" %}checked{% endif %}>
+                        <div class="mono text-xs uppercase tracking-wide text-center py-2.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                            En cours
+                        </div>
+                    </label>
+                    <label class="flex-1">
+                        <input type="radio" name="statut" value="terminee" class="peer sr-only"
+                               {% if tache.statut == "terminee" %}checked{% endif %}>
+                        <div class="mono text-xs uppercase tracking-wide text-center py-2.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                            Terminée
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="pt-2 flex gap-3">
+                <button type="submit" class="mono text-xs uppercase tracking-wide bg-[#1C1C1A] text-white px-5 py-3 hover:bg-black transition-colors">
+                    Enregistrer
+                </button>
+                <a href="{% url 'liste_tache' tache.id_proj.id %}" class="mono text-xs uppercase tracking-wide border border-[#DEDEDA] text-[#8A8A82] px-5 py-3 hover:border-[#1C1C1A] hover:text-[#1C1C1A] transition-colors">
+                    Annuler
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
+</body>
+</html>

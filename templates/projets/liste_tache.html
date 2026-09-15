@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des tâches</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'IBM Plex Sans', sans-serif; }
+        .mono { font-family: 'IBM Plex Mono', monospace; }
+    </style>
+</head>
+<body class="bg-[#FAFAF8] text-[#1C1C1A] min-h-screen">
+
+    <div class="max-w-3xl mx-auto px-6 py-14">
+
+        <a href="{% url 'liste_projet' %}" class="mono text-xs text-[#8A8A82] hover:text-[#1C1C1A] transition-colors">
+            ← Retour aux projets
+        </a>
+        <a href="{% url 'ajouter' %}"
+            class="mono text-xs uppercase tracking-wide border border-[#DEDEDA] text-[#8A8A82] px-3 py-2 hover:border-[#B03A2E] hover:text-[#B03A2E] transition-colors">
+            Ajouter
+        </a>
+        <div class="mt-6 pb-6 border-b-2 border-[#1C1C1A] flex items-end justify-between gap-4">
+            <div>
+                <p class="mono text-xs uppercase tracking-wider text-[#8A8A82] mb-1">Projet</p>
+                <h1 class="text-2xl font-semibold">{{ projet.intitule }}</h1>
+            </div>
+            <p class="mono text-xs text-[#8A8A82] whitespace-nowrap pb-1">
+                {{ projet.taches.all|length }} tâche{{ projet.taches.all|length|pluralize }}
+            </p>
+        </div>
+
+        <div class="mt-2">
+            {% for tache in projet.taches.all %}
+            <div class="group py-6 border-b border-[#DEDEDA] flex items-start justify-between gap-6">
+
+                <div class="flex items-start gap-4 min-w-0">
+                    <span class="mono text-xs text-[#8A8A82] pt-1 w-6 shrink-0">{{ forloop.counter|stringformat:"02d" }}</span>
+
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="w-2 h-2 shrink-0
+                                {% if tache.statut == 'terminee' %}bg-[#3E7D4F]
+                                {% elif tache.statut == 'en_cours' %}bg-[#B8862E]
+                                {% else %}bg-[#B0B0A8]{% endif %}">
+                            </span>
+                            <h2 class="font-medium text-base truncate">{{ tache.intitule }}</h2>
+                        </div>
+
+                        <p class="text-sm text-[#5C5C54] leading-relaxed max-w-md">
+                            {{ tache.resultat_attendu }}
+                        </p>
+
+                        <p class="mono text-xs text-[#8A8A82] mt-2">
+                            {{ tache.date_realisation }} · {{ tache.heure_debut|time:"H:i" }}–{{ tache.heure_fin|time:"H:i" }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <a href="{% url 'modifier_tache' tache.id %}"
+                       class="mono text-xs uppercase tracking-wide border border-[#1C1C1A] px-3 py-2 hover:bg-[#1C1C1A] hover:text-white transition-colors">
+                        Modifier
+                    </a>
+                    <a href="{% url 'supprimer_tache' tache.id %}"
+                       class="mono text-xs uppercase tracking-wide border border-[#DEDEDA] text-[#8A8A82] px-3 py-2 hover:border-[#B03A2E] hover:text-[#B03A2E] transition-colors">
+                        Supprimer
+                    </a>
+                </div>
+
+            </div>
+            {% empty %}
+            <div class="py-16 text-center">
+                <p class="text-[#8A8A82]">Aucune tâche enregistrée pour ce projet.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+</body>
+</html>

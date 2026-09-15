@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des projets</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        html, body { height: 100%; overflow: hidden; }
+        body { font-family: 'IBM Plex Sans', sans-serif; }
+        .mono { font-family: 'IBM Plex Mono', monospace; }
+
+        #track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+        .slide {
+            flex: 0 0 100%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 24px;
+        }
+        .navbtn {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #DEDEDA;
+            background: #FAFAF8;
+            color: #1C1C1A;
+            z-index: 20;
+        }
+        .navbtn:hover { background: #1C1C1A; color: #fff; border-color: #1C1C1A; }
+        .navbtn:disabled { opacity: 0.25; pointer-events: none; }
+    </style>
+</head>
+<body class="bg-[#FAFAF8] text-[#1C1C1A]">
+
+    <!-- HEADER -->
+    <div class="fixed top-0 left-0 right-0 z-10 bg-[#FAFAF8] border-b-2 border-[#1C1C1A]">
+        <div class="max-w-3xl mx-auto px-6 py-5 flex items-end justify-between gap-4">
+            <div>
+                <p class="mono text-xs uppercase tracking-wider text-[#8A8A82] mb-1">Nova Org</p>
+                <h1 class="text-xl font-semibold">Liste des projets</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <p class="mono text-xs text-[#8A8A82] whitespace-nowrap" id="counter">
+                    -- / --
+                </p>
+                <a href="{% url 'formulaire' %}"
+                   class="mono text-xs uppercase tracking-wide border border-[#1C1C1A] px-3 py-2 hover:bg-[#1C1C1A] hover:text-white transition-colors whitespace-nowrap">
+                    Nouveau projet
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAV ARROWS -->
+    <button id="prevBtn" class="navbtn" style="left: 24px;" aria-label="Projet précédent">‹</button>
+    <button id="nextBtn" class="navbtn" style="right: 24px;" aria-label="Projet suivant">›</button>
+
+    <!-- TRACK -->
+    <div id="track" class="pt-20">
+
+        {% for projet in projets %}
+        <div class="slide">
+            <div class="w-full max-w-xl border border-[#1C1C1A] bg-[#FAFAF8]">
+
+                <div class="px-8 pt-8 pb-6 border-b border-[#DEDEDA]">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-2.5 h-2.5 shrink-0
+                            {% if projet.statut == 'termine' %}bg-[#3E7D4F]
+                            {% elif projet.statut == 'en_cours' %}bg-[#B8862E]
+                            {% else %}bg-[#B0B0A8]{% endif %}">
+                        </span>
+                        <span class="mono text-xs uppercase tracking-wider text-[#8A8A82]">
+                            {% if projet.statut == 'termine' %}Terminé{% elif projet.statut == 'en_cours' %}En cours{% else %}À faire{% endif %}
+                        </span>
+                    </div>
+                    <h2 class="text-2xl font-semibold leading-snug">{{ projet.intitule }}</h2>
+                </div>
+
+                <div class="px-8 py-6">
+                    <p class="text-sm text-[#5C5C54] leading-relaxed">
+                        {{ projet.description }}
+                    </p>
+
+                    <p class="mono text-xs text-[#8A8A82] mt-4">
+                        {{ projet.date_debut }} → {{ projet.date_fin }}
+                    </p>
+
+                    <div class="mt-4 pt-4 border-t border-[#DEDEDA]">
+                        <p class="mono text-xs uppercase tracking-wide text-[#8A8A82] mb-1">Résultat attendu</p>
+                        <p class="text-sm text-[#5C5C54] leading-relaxed">{{ projet.resultat_attendu }}</p>
+                    </div>
+
+                    <div class="mt-6">
+                        <div class="flex items-center justify-between mono text-xs text-[#8A8A82] mb-1">
+                            <span>Progression</span>
+                            <span>{{ projet.progression }} %</span>
+                        </div>
+                        <div class="h-1 bg-[#EAEAE5] w-full">
+                            <div class="h-1 bg-[#1C1C1A]" style="width: {{ projet.progression }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-8 pb-8">
+                    <a href="{% url 'liste_tache' projet.id %}"
+                       class="inline-block mono text-xs uppercase tracking-wide border border-[#1C1C1A] px-4 py-2.5 hover:bg-[#1C1C1A] hover:text-white transition-colors">
+                        Voir les tâches
+                    </a>
+                </div>
+
+            </div>
+        </div>
+        {% empty %}
+        <div class="slide">
+            <p class="text-[#8A8A82]">Aucun projet enregistré.</p>
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <!-- DOTS -->
+    <div id="dots" class="fixed bottom-6 left-0 right-0 flex items-center justify-center gap-2 z-10"></div>
+
+    <script>
+        const track = document.getElementById('track');
+        const slides = document.querySelectorAll('.slide');
+        const counter = document.getElementById('counter');
+        const dotsWrap = document.getElementById('dots');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const total = slides.length;
+        let index = 0;
+
+        for (let i = 0; i < total; i++) {
+            const dot = document.createElement('button');
+            dot.className = 'w-1.5 h-1.5 rounded-full';
+            dot.style.background = '#DEDEDA';
+            dot.addEventListener('click', () => goTo(i));
+            dotsWrap.appendChild(dot);
+        }
+
+        function render() {
+            track.style.transform = `translateX(-${index * 100}%)`;
+            counter.textContent = total ? `${String(index + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}` : '00 / 00';
+            [...dotsWrap.children].forEach((d, i) => {
+                d.style.background = i === index ? '#1C1C1A' : '#DEDEDA';
+            });
+            prevBtn.disabled = index === 0;
+            nextBtn.disabled = index === total - 1;
+        }
+
+        function goTo(i) {
+            if (i < 0 || i >= total) return;
+            index = i;
+            render();
+        }
+
+        prevBtn.addEventListener('click', () => goTo(index - 1));
+        nextBtn.addEventListener('click', () => goTo(index + 1));
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') goTo(index + 1);
+            if (e.key === 'ArrowLeft') goTo(index - 1);
+        });
+
+        render();
+    </script>
+
+</body>
+</html>

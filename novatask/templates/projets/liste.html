@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Liste des projets</title>
+</head>
+
+<body>
+
+<h1>Liste des projets</h1>
+
+{% for projet in projets %}
+
+    <div>
+        <h2>{{ projet.intitule }}</h2>
+
+        <p>{{ projet.description }}</p>
+
+        <p>
+            Début : {{ projet.date_debut }}
+        </p>
+
+        <p>
+            Fin : {{ projet.date_fin }}
+        </p>
+
+        <p>
+            Résultat attendu : {{ projet.resultat_attendu }}
+        </p>
+
+        <p>
+            Statut : {{ projet.statut }}
+        </p>
+
+        <p>
+            Progression : {{ projet.progression }} %
+        </p>
+    </div>
+
+{% empty %}
+
+    <p>Aucun projet enregistré.</p>
+
+{% endfor %}
+
+</body>
+</html>

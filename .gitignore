@@ -1,0 +1,35 @@
+# Environnement virtuel
+.nova/
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+
+# Variables d'environnement
+.env
+.env.*
+
+# Fichiers temporaires
+*.log
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+#fichier word
+PROJET_PERSONNEL_REPONSE.*
+PROJET_PERSONNEL.*
+*.docx
