@@ -65,16 +65,19 @@ class Tache_projet(models.Model):
     heure_debut = models.TimeField()
     heure_fin = models.TimeField()
     resultat_attendu = models.TextField(null = True, blank = True)
-    fonctionnalite = models.CharField(null = True, blank = True)
+    fonctionnalite = models.CharField(max_length=255, null = True, blank = True)
     def clean(self):
         if self.resultat_attendu and self.fonctionnalite:
             raise ValidationError("Indiquer soit la FONCTIONNALITE soit le RESULTAT ATTENDU")
-        if self.resultat_attendu and not self.fonctionnalite:
-            raise ValidationError("Remplisser soit la FONCTIONALITE soit RESULTAT ATTENDU")
+        if not self.resultat_attendu and not self.fonctionnalite:
+            raise ValidationError("Vous devez renseigner soit la FONCTIONNALITE soit le RESULTAT ATTENDU.")
     class Meta:
         constraints = [
             CheckConstraint(
-                condition=(Q(resultat_attendu__isnull=False) & Q(fonctionnalite__isnull=True)) | (Q(resultat_attendu__isnull=True) & Q(fonctionnalite__isnull=False)),
+                condition=
+                (Q(resultat_attendu__isnull=False) & Q(fonctionnalite__isnull=True)) 
+                | 
+                (Q(resultat_attendu__isnull=True) & Q(fonctionnalite__isnull=False)),
                 name="soit_a_soit_b_pas_les_deux"
             )
     ]
