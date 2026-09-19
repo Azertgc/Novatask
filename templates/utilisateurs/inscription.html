@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - NovaTask</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'IBM Plex Sans', sans-serif; }
+        .mono { font-family: 'IBM Plex Mono', monospace; }
+
+        /* Fallback si les widgets Django n'ont pas de classes Tailwind */
+        form input[type="text"],
+        form input[type="password"] {
+            width: 100%;
+            border: 1px solid #DEDEDA;
+            background: #fff;
+            padding: 0.625rem 0.75rem;
+            font-size: 0.875rem;
+            color: #1C1C1A;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        form input[type="text"]:focus,
+        form input[type="password"]:focus {
+            border-color: #1C1C1A;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-[#FAFAF8] flex items-center justify-center px-4 py-10">
+
+    <div class="w-full max-w-md">
+
+        <div class="text-center mb-8">
+            <p class="mono text-xs uppercase tracking-widest text-[#8A8A82]">Nova Org</p>
+            <h1 class="text-2xl font-semibold text-[#1C1C1A] mt-1">NovaTask</h1>
+        </div>
+
+        <div class="border border-[#1C1C1A] bg-[#FAFAF8]">
+
+            <div class="px-8 pt-8 pb-6 border-b border-[#DEDEDA]">
+                <h2 class="text-xl font-semibold text-[#1C1C1A]">Créer un compte</h2>
+                <p class="text-sm text-[#8A8A82] mt-1">Inscrivez-vous pour accéder à NovaTask</p>
+            </div>
+
+            <form method="POST" class="px-8 py-6 space-y-5">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="border border-[#B8402E] bg-[#B8402E]/5 text-[#B8402E] text-sm px-3 py-2.5">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div>
+                    <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-1.5">
+                        Nom d'utilisateur
+                    </label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <p class="text-[#B8402E] text-xs mt-1.5">{{ form.username.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-1.5">
+                            Nom
+                        </label>
+                        {{ form.nom }}
+                        {% if form.nom.errors %}
+                            <p class="text-[#B8402E] text-xs mt-1.5">{{ form.nom.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-1.5">
+                            Prénom
+                        </label>
+                        {{ form.prenom }}
+                        {% if form.prenom.errors %}
+                            <p class="text-[#B8402E] text-xs mt-1.5">{{ form.prenom.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-1.5">
+                        Mot de passe
+                    </label>
+                    {{ form.password1 }}
+                    {% if form.password1.errors %}
+                        <p class="text-[#B8402E] text-xs mt-1.5">{{ form.password1.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-1.5">
+                        Confirmer le mot de passe
+                    </label>
+                    {{ form.password2 }}
+                    {% if form.password2.errors %}
+                        <p class="text-[#B8402E] text-xs mt-1.5">{{ form.password2.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full mono text-xs uppercase tracking-wide bg-[#1C1C1A] text-white py-3 hover:bg-[#3A3A36] transition-colors">
+                    Créer mon compte
+                </button>
+            </form>
+
+            <div class="px-8 py-5 border-t border-[#DEDEDA] text-center">
+                <p class="text-sm text-[#8A8A82]">
+                    Vous avez déjà un compte ?
+                    <a href="{% url 'connexion' %}" class="text-[#1C1C1A] font-medium hover:underline">
+                        Se connecter
+                    </a>
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>

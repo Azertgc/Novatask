@@ -5,9 +5,28 @@ from django.db.models import Q, CheckConstraint
 # Create your models here.
 
 class Utilisateur(AbstractUser):
-    id_user = models.CharField(max_length=5)
+    id_user = models.CharField(max_length=5, unique=True, editable=False)
     nom = models.CharField(max_length=25)
     prenom = models.CharField(max_length=100)
+    def save(self, *args, **kwargs):
+        if not self.id_user:
+            utilisateurs = Utilisateur.objects.filter(
+                id_user__startswith='U'
+            )
+
+            dernier_numero = 0
+
+            for utilisateur in utilisateurs:
+                try:
+                    numero = int(utilisateur.id_user[1:])
+                    dernier_numero = max(dernier_numero, numero)
+                except ValueError:
+                    pass
+
+            self.id_user = f"U{dernier_numero + 1:03d}"
+
+        super().save(*args, **kwargs)      
+
     def  __str__(self):
         return self.nom
     
@@ -20,6 +39,7 @@ class Projet(models.Model):
     date_debut = models.DateField()
     date_fin = models.DateField()
     resultat_attendu = models.TextField()
+
     id_user = models.ForeignKey(
         Utilisateur,
         on_delete=models.CASCADE,
@@ -50,6 +70,8 @@ class Projet(models.Model):
             statut = 'terminee'
         ).count()
         return round((terminee / taches.count())*100)
+    
+
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------     
