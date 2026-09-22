@@ -43,7 +43,7 @@ def home(request):
 #-------------------------------------------------------------------------------------------------------------------- 
 @login_required
 def liste_projet(request):
-    projets=Projet.objects.all()
+    projets = Projet.objects.filter(id_user=request.user)
 
     return render(request,'projets/liste.html',{
         'projets':projets
@@ -58,12 +58,13 @@ def liste_tache(request, id):
         id=id,
         id_user=request.user
     )
-
+    taches = Tache_projet.objects.filter(id_proj=projetPer)
 
     return render(request, 'projets/liste_tache.html', {
-        'projet':projetPer
+        'projet':projetPer,
+        'taches':taches
     })
-#----------------------------\----------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------------- 
 @login_required
