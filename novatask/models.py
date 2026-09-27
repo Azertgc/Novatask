@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db.models import Q, CheckConstraint
+from django.utils import timezone
+from datetime import datetime
 # Create your models here.
 
 class Utilisateur(AbstractUser):
@@ -111,17 +113,39 @@ class Tache_projet(models.Model):
     heure_fin = models.TimeField()
     resultat_attendu = models.TextField(null=True, blank=True)
     fonctionnalite = models.CharField(max_length=255, null=True, blank=True)
-
+    
     def clean(self):
         if self.resultat_attendu and self.fonctionnalite:
             raise ValidationError("Indiquer soit la FONCTIONNALITE soit le RESULTAT ATTENDU")
         if not self.resultat_attendu and not self.fonctionnalite:
             raise ValidationError("Vous devez renseigner soit la FONCTIONNALITE soit le RESULTAT ATTENDU.")
-        if self.id_proj_id and self.date_realisation:
-            if self.date_realisation < self.id_proj.date_debut or self.date_realisation > self.id_proj.date_fin:
-                raise ValidationError(
-                    f"La date de réalisation doit être comprise entre {self.id_proj.date_debut} et {self.id_proj.date_fin}."
-                )
+
+    @property
+    def datetime_debut(self):
+        naive = datetime.combine(self.date_realisation, self.heure_debut)
+        return timezone.make_aware(naive) if timezone.is_naive(naive) else naive
+
+    @classmethod
+    def actualiser_statuts(cls, queryset=None):
+        """
+        Fait passer automatiquement les tâches de 'a_faire' à 'en_cours'
+        dès que leur date + heure de début est atteinte.
+        """
+        maintenant = timezone.localtime()
+        taches = (queryset if queryset is not None else cls.objects.all()).filter(statut='a_faire')
+
+        a_mettre_a_jour = []
+        for tache in taches:
+            if maintenant >= tache.datetime_debut:
+                tache.statut = 'en_cours'
+                a_mettre_a_jour.append(tache)
+
+        if a_mettre_a_jour:
+            cls.objects.bulk_update(a_mettre_a_jour, ['statut'])
+
+        return a_mettre_a_jour
+
+    # ... reste inchangé (save, __str__, etc.) ...
     class Meta:
         constraints = [
             CheckConstraint(

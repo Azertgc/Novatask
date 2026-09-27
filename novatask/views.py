@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .models import Projet, Utilisateur, Tache_projet
 from .forms import ProjetForm, NouvelleTache, InscriptionForm
 from django.contrib.auth import authenticate, login, logout
@@ -44,6 +44,9 @@ def home(request):
 #-------------------------------------------------------------------------------------------------------------------- 
 @login_required
 def liste_projet(request):
+    Tache_projet.actualiser_statuts(
+        queryset=Tache_projet.objects.filter(id_proj__id_user=request.user)
+    )
     projets = Projet.objects.filter(id_user=request.user)
 
     return render(request,'projets/liste.html',{
@@ -58,6 +61,9 @@ def liste_tache(request, id):
         Projet,
         id=id,
         id_user=request.user
+    )
+    Tache_projet.actualiser_statuts(
+        queryset=projetPer.taches.all()
     )
     taches = Tache_projet.objects.filter(id_proj=projetPer)
 
@@ -150,3 +156,25 @@ def ajouter_tache(request):
         'form': form,
         'projets_dates_json': json.dumps(projets_dates),
     })
+
+@login_required
+def taches_notifications_json(request):
+    Tache_projet.actualiser_statuts(
+        queryset=Tache_projet.objects.filter(id_proj__id_user=request.user)
+    )
+
+    taches = Tache_projet.objects.filter(
+        id_proj__id_user=request.user
+    ).select_related('id_proj')
+
+    data = [{
+        'id': t.id,
+        'intitule': t.intitule,
+        'projet': t.id_proj.intitule,
+        'date_realisation': t.date_realisation.isoformat(),
+        'heure_debut': t.heure_debut.strftime('%H:%M:%S'),
+        'heure_fin': t.heure_fin.strftime('%H:%M:%S'),
+        'statut': t.statut,
+    } for t in taches]
+
+    return JsonResponse({'taches': data})
