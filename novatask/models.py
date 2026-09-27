@@ -34,7 +34,7 @@ class Utilisateur(AbstractUser):
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------     
 class Projet(models.Model):
-    id_proj = models.CharField(max_length=5)
+    id_proj = models.CharField(max_length=5, unique=True, editable=False)
     intitule = models.CharField(max_length=100)
     date_debut = models.DateField()
     date_fin = models.DateField()
@@ -47,9 +47,25 @@ class Projet(models.Model):
         )
     description = models.TextField()
 
+    def save(self, *args, **kwargs):
+        if not self.id_proj:
+            projets = Projet.objects.filter(id_proj__startswith='P')
+
+            dernier_numero = 0
+            for projet in projets:
+                try:
+                    numero = int(projet.id_proj[1:])
+                    dernier_numero = max(dernier_numero, numero)
+                except ValueError:
+                    pass
+
+            self.id_proj = f"P{dernier_numero + 1:03d}"
+
+        super().save(*args, **kwargs)
+
     def  __str__(self):
         return self.intitule
-    
+
     @property
     def statut(self):
         taches = self.taches.all()
@@ -60,7 +76,7 @@ class Projet(models.Model):
         if any(tache.statut == 'en_cours' for tache in taches):
             return 'en_cours'
         return "a_faire"
-    
+
     @property
     def progression(self):
         taches = self.taches.all()
@@ -71,7 +87,14 @@ class Projet(models.Model):
         ).count()
         return round((terminee / taches.count())*100)
     
+    def clean(self):
+        from django.utils import timezone
 
+        if self.date_debut is not None and self.date_debut < timezone.localdate():
+            raise ValidationError("La date de début ne peut pas être antérieure à aujourd'hui.")
+
+        if self.date_debut is not None and self.date_fin is not None and self.date_fin < self.date_debut:
+            raise ValidationError("La date de fin ne peut pas être antérieure à la date de début.")
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------     
@@ -81,24 +104,30 @@ class Tache_projet(models.Model):
         EN_COURS = 'en_cours','En cours'
         TERMINEE = 'terminee','Terminee'
 
-    num_tache = models.CharField(max_length=100)
+    num_tache = models.CharField(max_length=100, unique=True, editable=False)
     intitule = models.CharField(max_length=100)
     date_realisation = models.DateField()
     heure_debut = models.TimeField()
     heure_fin = models.TimeField()
-    resultat_attendu = models.TextField(null = True, blank = True)
-    fonctionnalite = models.CharField(max_length=255, null = True, blank = True)
+    resultat_attendu = models.TextField(null=True, blank=True)
+    fonctionnalite = models.CharField(max_length=255, null=True, blank=True)
+
     def clean(self):
         if self.resultat_attendu and self.fonctionnalite:
             raise ValidationError("Indiquer soit la FONCTIONNALITE soit le RESULTAT ATTENDU")
         if not self.resultat_attendu and not self.fonctionnalite:
             raise ValidationError("Vous devez renseigner soit la FONCTIONNALITE soit le RESULTAT ATTENDU.")
+        if self.id_proj_id and self.date_realisation:
+            if self.date_realisation < self.id_proj.date_debut or self.date_realisation > self.id_proj.date_fin:
+                raise ValidationError(
+                    f"La date de réalisation doit être comprise entre {self.id_proj.date_debut} et {self.id_proj.date_fin}."
+                )
     class Meta:
         constraints = [
             CheckConstraint(
                 condition=
-                (Q(resultat_attendu__isnull=False) & Q(fonctionnalite__isnull=True)) 
-                | 
+                (Q(resultat_attendu__isnull=False) & Q(fonctionnalite__isnull=True))
+                |
                 (Q(resultat_attendu__isnull=True) & Q(fonctionnalite__isnull=False)),
                 name="soit_a_soit_b_pas_les_deux"
             )
@@ -113,10 +142,26 @@ class Tache_projet(models.Model):
         on_delete=models.CASCADE,
         related_name="taches"
         )
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def  __str__(self):
-        return self.intitule       
+    def save(self, *args, **kwargs):
+        if not self.num_tache:
+            taches = Tache_projet.objects.filter(num_tache__startswith='T')
+
+            dernier_numero = 0
+            for tache in taches:
+                try:
+                    numero = int(tache.num_tache[1:])
+                    dernier_numero = max(dernier_numero, numero)
+                except ValueError:
+                    pass
+
+            self.num_tache = f"T{dernier_numero + 1:03d}"
+
+        super().save(*args, **kwargs)
         
+
+    def  __str__(self):
+        return self.intitule

@@ -3,44 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supprimer la tâche</title>
+    <title>Nouvelle tâche - NovaTask</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
     <style>
         body { font-family: 'IBM Plex Sans', sans-serif; }
         .mono { font-family: 'IBM Plex Mono', monospace; }
+
+        form input[type="text"],
+        form input[type="date"],
+        form input[type="time"],
+        form textarea,
+        form select {
+            width: 100%;
+            border: 1px solid #DEDEDA;
+            background: #fff;
+            padding: 0.625rem 0.75rem;
+            font-size: 0.875rem;
+            color: #1C1C1A;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        form input[type="text"]:focus,
+        form input[type="date"]:focus,
+        form input[type="time"]:focus,
+        form textarea:focus,
+        form select:focus {
+            border-color: #1C1C1A;
+        }
+        form textarea { resize: vertical; min-height: 90px; }
+
+        .toggle-btn {
+            flex: 1;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+            padding: 0.625rem;
+            border: 1px solid #DEDEDA;
+            color: #8A8A82;
+            cursor: pointer;
+            transition: all 0.15s;
+            background: #fff;
+        }
+        .toggle-btn.active {
+            background: #1C1C1A;
+            color: #fff;
+            border-color: #1C1C1A;
+        }
+
+        /* Flatpickr : champ désactivé tant qu'aucun projet n'est choisi */
+        #id_date_realisation:disabled {
+            background: #F0F0EC;
+            color: #B0B0A8;
+            cursor: not-allowed;
+        }
+        .hint-projet {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            color: #8A8A82;
+            margin-top: 0.375rem;
+        }
     </style>
 </head>
-<body class="bg-[#FAFAF8] text-[#1C1C1A] min-h-screen flex items-center justify-center">
+<body class="bg-[#FAFAF8] text-[#1C1C1A] min-h-screen flex items-center justify-center px-4 py-10">
 
-    <div class="w-full max-w-lg bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+    <div class="w-full max-w-lg">
 
-        <h1 class="text-2xl font-semibold text-slate-900 mb-1">Créer un projet</h1>
-        <p class="text-sm text-slate-500 mb-6">Renseigne les informations du projet.</p>
+        <div class="text-center mb-6">
+            <p class="mono text-xs uppercase tracking-widest text-[#8A8A82]">Nova Org</p>
+            <h1 class="text-2xl font-semibold mt-1">Nouvelle tâche</h1>
+        </div>
 
-        <form method="POST" class="space-y-4">
-            {% csrf_token %}
+        <div class="border border-[#1C1C1A] bg-[#FAFAF8]">
 
-            {% for field in form %}
-            <div>
-                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-slate-700 mb-1">
-                    {{ field.label }}
-                </label>
-                {{ field }}
-                {% if field.errors %}
-                <p class="text-sm text-red-600 mt-1">{{ field.errors|striptags }}</p>
-                {% endif %}
+            <div class="px-6 sm:px-8 pt-6 sm:pt-8 pb-5 border-b border-[#DEDEDA]">
+                <h2 class="text-lg font-semibold">Informations de la tâche</h2>
+                <p class="text-sm text-[#8A8A82] mt-1">Renseigne les informations de la tâche.</p>
             </div>
-            {% endfor %}
 
-            <button type="submit"
-                class="w-full bg-slate-900 text-white font-medium py-2.5 rounded-lg hover:bg-slate-800 transition">
-                ajouter
-            </button>
-        </form>
+            <form method="POST" class="px-6 sm:px-8 py-6 space-y-5">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    {% if field.name != 'resultat_attendu' and field.name != 'fonctionnalite' and field.name != 'date_realisation' %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-1.5">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        {% if field.errors %}
+                        <p class="text-[#B8402E] text-xs mt-1.5">{{ field.errors|striptags }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if field.name == 'date_realisation' %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-1.5">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        <p id="hint-projet" class="hint-projet">Choisis d'abord un projet pour activer les dates disponibles.</p>
+                        {% if field.errors %}
+                        <p class="text-[#B8402E] text-xs mt-1.5">{{ field.errors|striptags }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- TOGGLE RESULTAT / FONCTIONNALITE -->
+                <div>
+                    <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-1.5">
+                        Type d'information
+                    </label>
+                    <div class="flex gap-2 mb-3">
+                        <div id="btn-resultat" class="toggle-btn active" onclick="basculer('resultat')">
+                            Résultat attendu
+                        </div>
+                        <div id="btn-fonctionnalite" class="toggle-btn" onclick="basculer('fonctionnalite')">
+                            Fonctionnalité
+                        </div>
+                    </div>
+
+                    <div id="champ-resultat">
+                        {{ form.resultat_attendu }}
+                        {% if form.resultat_attendu.errors %}
+                        <p class="text-[#B8402E] text-xs mt-1.5">{{ form.resultat_attendu.errors|striptags }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div id="champ-fonctionnalite" class="hidden">
+                        {{ form.fonctionnalite }}
+                        {% if form.fonctionnalite.errors %}
+                        <p class="text-[#B8402E] text-xs mt-1.5">{{ form.fonctionnalite.errors|striptags }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full mono text-xs uppercase tracking-wide bg-[#1C1C1A] text-white py-3 hover:bg-[#3A3A36] transition-colors">
+                    Ajouter
+                </button>
+            </form>
+
+        </div>
 
     </div>
+
+    <script>
+        // ---------- TOGGLE RESULTAT / FONCTIONNALITE ----------
+        function basculer(choix) {
+            const btnResultat = document.getElementById('btn-resultat');
+            const btnFonctionnalite = document.getElementById('btn-fonctionnalite');
+            const champResultat = document.getElementById('champ-resultat');
+            const champFonctionnalite = document.getElementById('champ-fonctionnalite');
+
+            const inputResultat = champResultat.querySelector('textarea, input');
+            const inputFonctionnalite = champFonctionnalite.querySelector('textarea, input');
+
+            if (choix === 'resultat') {
+                btnResultat.classList.add('active');
+                btnFonctionnalite.classList.remove('active');
+                champResultat.classList.remove('hidden');
+                champFonctionnalite.classList.add('hidden');
+                inputFonctionnalite.value = '';
+            } else {
+                btnFonctionnalite.classList.add('active');
+                btnResultat.classList.remove('active');
+                champFonctionnalite.classList.remove('hidden');
+                champResultat.classList.add('hidden');
+                inputResultat.value = '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputFonctionnalite = document.getElementById('champ-fonctionnalite').querySelector('textarea, input');
+            if (inputFonctionnalite.value.trim() !== '') {
+                basculer('fonctionnalite');
+            }
+        });
+
+        // ---------- RESTRICTION DE DATE PAR PROJET (Flatpickr) ----------
+        const projetsDates = JSON.parse('{{ projets_dates_json|escapejs }}');
+
+        const selectProjet = document.getElementById('id_id_proj');
+        const inputDate = document.getElementById('id_date_realisation');
+        const hintProjet = document.getElementById('hint-projet');
+
+        // Désactivé tant qu'aucun projet n'est sélectionné : impossible d'ouvrir le calendrier
+        inputDate.disabled = true;
+
+        const fp = flatpickr(inputDate, {
+            dateFormat: "Y-m-d",
+            allowInput: false,   // bloque toute saisie clavier hors calendrier
+            clickOpens: true,
+            disableMobile: true,
+        });
+
+        function appliquerRestrictionDate() {
+            const projetId = selectProjet.value;
+            const dates = projetsDates[projetId];
+
+            if (dates) {
+                inputDate.disabled = false;
+                fp.set('minDate', dates.debut);
+                fp.set('maxDate', dates.fin);
+                hintProjet.textContent = `Dates disponibles : du ${dates.debut} au ${dates.fin}.`;
+
+                // Si une date déjà saisie sort du nouvel intervalle, on la vide
+                if (fp.selectedDates[0]) {
+                    const selection = fp.formatDate(fp.selectedDates[0], "Y-m-d");
+                    if (selection < dates.debut || selection > dates.fin) {
+                        fp.clear();
+                    }
+                }
+            } else {
+                inputDate.disabled = true;
+                fp.clear();
+                fp.set('minDate', null);
+                fp.set('maxDate', null);
+                hintProjet.textContent = "Choisis d'abord un projet pour activer les dates disponibles.";
+            }
+        }
+
+        selectProjet.addEventListener('change', appliquerRestrictionDate);
+        document.addEventListener('DOMContentLoaded', appliquerRestrictionDate);
+    </script>
 
 </body>
 </html>

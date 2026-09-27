@@ -16,6 +16,10 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 AUTH_USER_MODEL = 'novatask.Utilisateur'
 LOGIN_URL = 'connexion'
+AUTHENTICATION_BACKENDS = [
+    'novatask.backends.CaseInsensitiveModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/

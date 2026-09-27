@@ -25,7 +25,10 @@ class ProjetAmin(admin.ModelAdmin):
         'statut',
         'progression'
     )
-
+    list_filter = (
+        'id_user',
+        'id_user__nom',
+    )
     
 
 #admin.site.register(Tache_projet)

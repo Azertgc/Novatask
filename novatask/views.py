@@ -4,6 +4,7 @@ from .models import Projet, Utilisateur, Tache_projet
 from .forms import ProjetForm, NouvelleTache, InscriptionForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+import json
 # Create your views here.
 
 def connexion(request):
@@ -19,7 +20,7 @@ def connexion(request):
         if utilisateur is not None:
             login(request, utilisateur)
             return redirect('liste_projet')
-        return render(request, 'utilisateurs/sonnexion.html',{'erreur': "Nom d'utilisateur ou mot de passe incorect."})
+        return render(request, 'utilisateurs/connexion.html',{'erreur': "Nom d'utilisateur ou mot de passe incorect."})
     return render(request, 'utilisateurs/connexion.html')
 
 def deconnexion(request):
@@ -72,12 +73,14 @@ def creer_projet(request):
     if request.method == 'POST':
         form = ProjetForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('connexion')
+            projet = form.save(commit=False)
+            projet.id_user = request.user
+            projet.save()
+            return redirect('liste_projet')
     else:
         form = ProjetForm()
-    return render(request, 'projets/formulaire.html',{
-        'form' : form
+    return render(request, 'projets/formulaire.html', {
+        'form': form
     })
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------
@@ -122,29 +125,28 @@ def supprimer_tache(request, id):
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------------- 
+
 @login_required
 def ajouter_tache(request):
+    projets_utilisateur = Projet.objects.filter(id_user=request.user)
 
     if request.method == 'POST':
         form = NouvelleTache(request.POST)
-
-        # On limite les projets aux projets de l'utilisateur connecté
-        form.fields['id_proj'].queryset = Projet.objects.filter(
-            id_user=request.user
-        )
+        form.fields['id_proj'].queryset = projets_utilisateur
 
         if form.is_valid():
             form.save()
             return redirect('liste_projet')
-
     else:
         form = NouvelleTache()
+        form.fields['id_proj'].queryset = projets_utilisateur
 
-        # Afficher uniquement les projets appartenant à l'utilisateur connecté
-        form.fields['id_proj'].queryset = Projet.objects.filter(
-            id_user=request.user
-        )
+    projets_dates = {
+        p.id: {'debut': p.date_debut.isoformat(), 'fin': p.date_fin.isoformat()}
+        for p in projets_utilisateur
+    }
 
     return render(request, 'projets/ajouter_tache.html', {
         'form': form,
+        'projets_dates_json': json.dumps(projets_dates),
     })

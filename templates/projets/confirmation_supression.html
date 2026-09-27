@@ -29,16 +29,16 @@
             </p>
         </div>
 
-        <form method="POST" class="px-6 pb-6 flex gap-3">
+        <form method="POST" class="px-6 pb-6 flex flex-col sm:flex-row gap-3">
             {% csrf_token %}
 
             <button type="submit"
-                class="mono text-xs uppercase tracking-wide bg-[#B03A2E] text-white px-5 py-3 hover:bg-[#8F2E24] transition-colors">
+                class="flex-1 mono text-xs uppercase tracking-wide bg-[#B03A2E] text-white px-5 py-3 hover:bg-[#8F2E24] transition-colors">
                 Oui, supprimer
             </button>
 
             <a href="{% url 'liste_tache' tache.id_proj.id %}"
-                class="mono text-xs uppercase tracking-wide border border-[#DEDEDA] text-[#8A8A82] px-5 py-3 hover:border-[#1C1C1A] hover:text-[#1C1C1A] transition-colors">
+                class="flex-1 text-center mono text-xs uppercase tracking-wide border border-[#DEDEDA] text-[#8A8A82] px-5 py-3 hover:border-[#1C1C1A] hover:text-[#1C1C1A] transition-colors">
                 Annuler
             </a>
         </form>

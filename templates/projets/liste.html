@@ -52,17 +52,31 @@
                 <p class="mono text-xs uppercase tracking-wider text-[#8A8A82] mb-1">Nova Org</p>
                 <h1 class="text-xl font-semibold">Liste des projets</h1>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-5">
+
                 <p class="mono text-xs text-[#8A8A82] whitespace-nowrap" id="counter">
                     -- / --
                 </p>
+
                 <a href="{% url 'formulaire' %}"
                    class="mono text-xs uppercase tracking-wide border border-[#1C1C1A] px-3 py-2 hover:bg-[#1C1C1A] hover:text-white transition-colors whitespace-nowrap">
                     Nouveau projet
                 </a>
-                <a href="{% url 'deconnexion' %}">
-                    Se déconnecter
-                </a>
+
+                <!-- UTILISATEUR -->
+                <div class="flex items-center gap-3 pl-5 border-l border-[#DEDEDA]">
+                    <div class="w-7 h-7 rounded-full bg-[#1C1C1A] text-white flex items-center justify-center text-xs font-semibold shrink-0">
+                        {{ request.user.nom|slice:":1"|upper }}
+                    </div>
+                    <div class="leading-tight hidden sm:block">
+                        <p class="text-sm font-medium">{{ request.user.prenom }} {{ request.user.nom }}</p>
+                        <a href="{% url 'deconnexion' %}"
+                           class="mono text-[10px] uppercase tracking-wide text-[#8A8A82] hover:text-[#1C1C1A] underline underline-offset-2">
+                            Se déconnecter
+                        </a>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

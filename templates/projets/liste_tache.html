@@ -14,31 +14,41 @@
 </head>
 <body class="bg-[#FAFAF8] text-[#1C1C1A] min-h-screen">
 
-    <div class="max-w-3xl mx-auto px-6 py-14">
+    <div class="max-w-3xl mx-auto px-6 py-10 sm:py-14">
 
-        <a href="{% url 'liste_projet' %}" class="mono text-xs text-[#8A8A82] hover:text-[#1C1C1A] transition-colors">
-            ← Retour aux projets
-        </a>
-        <a href="{% url 'ajouter' %}"
-            class="mono text-xs uppercase tracking-wide border border-[#DEDEDA] text-[#8A8A82] px-3 py-2 hover:border-[#B03A2E] hover:text-[#B03A2E] transition-colors">
-            Ajouter
-        </a>
-        <a href="{% url 'deconnexion' %}">
-            Se déconnecter
-        </a>
-        <div class="mt-6 pb-6 border-b-2 border-[#1C1C1A] flex items-end justify-between gap-4">
+        <!-- BARRE D'ACTIONS -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <a href="{% url 'liste_projet' %}" class="mono text-xs text-[#8A8A82] hover:text-[#1C1C1A] transition-colors">
+                ← Retour aux projets
+            </a>
+
+            <div class="flex items-center gap-3">
+                <a href="{% url 'ajouter' %}"
+                    class="mono text-xs uppercase tracking-wide border border-[#1C1C1A] px-3 py-2 hover:bg-[#1C1C1A] hover:text-white transition-colors">
+                    Ajouter
+                </a>
+                <a href="{% url 'deconnexion' %}"
+                    class="mono text-xs uppercase tracking-wide text-[#8A8A82] hover:text-[#1C1C1A] underline underline-offset-4">
+                    Se déconnecter
+                </a>
+            </div>
+        </div>
+
+        <!-- EN-TÊTE PROJET -->
+        <div class="mt-6 pb-6 border-b-2 border-[#1C1C1A] flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
             <div>
                 <p class="mono text-xs uppercase tracking-wider text-[#8A8A82] mb-1">Projet</p>
                 <h1 class="text-2xl font-semibold">{{ projet.intitule }}</h1>
             </div>
-            <p class="mono text-xs text-[#8A8A82] whitespace-nowrap pb-1">
+            <p class="mono text-xs text-[#8A8A82] whitespace-nowrap sm:pb-1">
                 {{ projet.taches.all|length }} tâche{{ projet.taches.all|length|pluralize }}
             </p>
         </div>
 
+        <!-- LISTE DES TÂCHES -->
         <div class="mt-2">
             {% for tache in projet.taches.all %}
-            <div class="group py-6 border-b border-[#DEDEDA] flex items-start justify-between gap-6">
+            <div class="group py-6 border-b border-[#DEDEDA] flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6">
 
                 <div class="flex items-start gap-4 min-w-0">
                     <span class="mono text-xs text-[#8A8A82] pt-1 w-6 shrink-0">{{ forloop.counter|stringformat:"02d" }}</span>
@@ -63,7 +73,7 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2 shrink-0">
+                <div class="flex items-center gap-2 shrink-0 pl-10 sm:pl-0">
                     <a href="{% url 'modifier_tache' tache.id %}"
                        class="mono text-xs uppercase tracking-wide border border-[#1C1C1A] px-3 py-2 hover:bg-[#1C1C1A] hover:text-white transition-colors">
                         Modifier

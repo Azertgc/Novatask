@@ -26,7 +26,7 @@
 </head>
 <body class="bg-[#FAFAF8] text-[#1C1C1A] min-h-screen">
 
-    <div class="max-w-xl mx-auto px-6 py-14">
+    <div class="max-w-xl mx-auto px-6 py-10 sm:py-14">
 
         <a href="{% url 'liste_tache' tache.id_proj.id %}" class="mono text-xs text-[#8A8A82] hover:text-[#1C1C1A] transition-colors">
             ← Retour aux tâches
@@ -45,7 +45,7 @@
                 <input type="text" name="intitule" value="{{ tache.intitule }}" class="field-input">
             </div>
 
-            <div class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-2">Date</label>
                     <input type="date" name="date_realisation" value="{{ tache.date_realisation|date:'Y-m-d' }}" class="field-input">
@@ -67,36 +67,36 @@
 
             <div>
                 <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-2">Statut</label>
-                <div class="flex gap-2">
-                    <label class="flex-1">
+                <div class="grid grid-cols-3 gap-2">
+                    <label>
                         <input type="radio" name="statut" value="a_faire" class="peer sr-only"
                                {% if tache.statut == "a_faire" %}checked{% endif %}>
-                        <div class="mono text-xs uppercase tracking-wide text-center py-2.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                        <div class="mono text-[10px] sm:text-xs uppercase tracking-wide text-center py-2.5 px-1 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
                             À faire
                         </div>
                     </label>
-                    <label class="flex-1">
+                    <label>
                         <input type="radio" name="statut" value="en_cours" class="peer sr-only"
                                {% if tache.statut == "en_cours" %}checked{% endif %}>
-                        <div class="mono text-xs uppercase tracking-wide text-center py-2.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                        <div class="mono text-[10px] sm:text-xs uppercase tracking-wide text-center py-2.5 px-1 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
                             En cours
                         </div>
                     </label>
-                    <label class="flex-1">
+                    <label>
                         <input type="radio" name="statut" value="terminee" class="peer sr-only"
                                {% if tache.statut == "terminee" %}checked{% endif %}>
-                        <div class="mono text-xs uppercase tracking-wide text-center py-2.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                        <div class="mono text-[10px] sm:text-xs uppercase tracking-wide text-center py-2.5 px-1 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
                             Terminée
                         </div>
                     </label>
                 </div>
             </div>
 
-            <div class="pt-2 flex gap-3">
-                <button type="submit" class="mono text-xs uppercase tracking-wide bg-[#1C1C1A] text-white px-5 py-3 hover:bg-black transition-colors">
+            <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                <button type="submit" class="flex-1 mono text-xs uppercase tracking-wide bg-[#1C1C1A] text-white px-5 py-3 hover:bg-black transition-colors">
                     Enregistrer
                 </button>
-                <a href="{% url 'liste_tache' tache.id_proj.id %}" class="mono text-xs uppercase tracking-wide border border-[#DEDEDA] text-[#8A8A82] px-5 py-3 hover:border-[#1C1C1A] hover:text-[#1C1C1A] transition-colors">
+                <a href="{% url 'liste_tache' tache.id_proj.id %}" class="flex-1 text-center mono text-xs uppercase tracking-wide border border-[#DEDEDA] text-[#8A8A82] px-5 py-3 hover:border-[#1C1C1A] hover:text-[#1C1C1A] transition-colors">
                     Annuler
                 </a>
             </div>
