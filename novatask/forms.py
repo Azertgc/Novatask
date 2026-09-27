@@ -68,8 +68,8 @@ class NouvelleTache(forms.ModelForm):
         model = Tache_projet
         fields = [
             'intitule',
-            'date_realisation',
             'id_proj',
+            'date_realisation',
             'heure_debut',
             'heure_fin',
             'resultat_attendu',

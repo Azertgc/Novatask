@@ -105,7 +105,7 @@ class Tache_projet(models.Model):
         A_FAIRE = 'a_faire','A faire'
         EN_COURS = 'en_cours','En cours'
         TERMINEE = 'terminee','Terminee'
-
+    rappel_envoye = models.BooleanField(default=False)
     num_tache = models.CharField(max_length=100, unique=True, editable=False)
     intitule = models.CharField(max_length=100)
     date_realisation = models.DateField()
@@ -125,6 +125,11 @@ class Tache_projet(models.Model):
         naive = datetime.combine(self.date_realisation, self.heure_debut)
         return timezone.make_aware(naive) if timezone.is_naive(naive) else naive
 
+    @property
+    def datetime_fin(self):
+        naive = datetime.combine(self.date_realisation, self.heure_fin)
+        return timezone.make_aware(naive) if timezone.is_naive(naive) else naive
+    
     @classmethod
     def actualiser_statuts(cls, queryset=None):
         """
