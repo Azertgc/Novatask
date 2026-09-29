@@ -48,9 +48,12 @@ def liste_projet(request):
         queryset=Tache_projet.objects.filter(id_proj__id_user=request.user)
     )
     projets = Projet.objects.filter(id_user=request.user)
-
+    recherche = request.GET.get('q','').strip()
+    if recherche:
+        projets = projets.filter(intitule__icontains=recherche)
     return render(request,'projets/liste.html',{
-        'projets':projets
+        'projets':projets,
+        'recherche':recherche
         })
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------
@@ -67,10 +70,14 @@ def liste_tache(request, id):
     )
     taches = Tache_projet.objects.filter(id_proj=projetPer)
 
+    recherche = request.GET.get('q', '').strip()
+    if recherche:
+        taches = taches.filter(intitule__icontains=recherche)
+
     return render(request, 'projets/liste_tache.html', {
-        'projet':projetPer,
-        'taches':taches
-    })
+        'projet': projetPer,
+        'taches': taches,
+        'recherche': recherche,})
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------------- 
