@@ -5,6 +5,8 @@ from .forms import ProjetForm, NouvelleTache, InscriptionForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 import json
+
+from novatask.services import normaliser
 # Create your views here.
 
 def connexion(request):
@@ -50,7 +52,8 @@ def liste_projet(request):
     projets = Projet.objects.filter(id_user=request.user)
     recherche = request.GET.get('q','').strip()
     if recherche:
-        projets = projets.filter(intitule__icontains=recherche)
+        terme = normaliser(recherche)
+        projets = [p for p in projets if terme in normaliser(p.intitule)]
     return render(request,'projets/liste.html',{
         'projets':projets,
         'recherche':recherche
@@ -72,8 +75,8 @@ def liste_tache(request, id):
 
     recherche = request.GET.get('q', '').strip()
     if recherche:
-        taches = taches.filter(intitule__icontains=recherche)
-
+        terme = normaliser(recherche)
+        taches = [t for t in taches if terme in normaliser(t.intitule)]
     return render(request, 'projets/liste_tache.html', {
         'projet': projetPer,
         'taches': taches,

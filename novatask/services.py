@@ -51,3 +51,14 @@ def marquer_rappel_envoye(taches):
     for tache in taches:
         tache.rappel_envoye = True
     Tache_projet.objects.bulk_update(taches, ['rappel_envoye'])
+
+import unicodedata
+
+
+def normaliser(texte):
+    """Retire les accents et met en minuscule, pour une recherche insensible aux accents."""
+    if not texte:
+        return ''
+    texte = unicodedata.normalize('NFD', texte)
+    texte = ''.join(c for c in texte if unicodedata.category(c) != 'Mn')
+    return texte.lower()    
