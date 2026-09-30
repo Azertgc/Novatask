@@ -50,37 +50,75 @@ def liste_projet(request):
         queryset=Tache_projet.objects.filter(id_proj__id_user=request.user)
     )
     projets = Projet.objects.filter(id_user=request.user)
-    recherche = request.GET.get('q','').strip()
+
+    recherche = request.GET.get('q', '').strip()
     if recherche:
         terme = normaliser(recherche)
         projets = [p for p in projets if terme in normaliser(p.intitule)]
-    return render(request,'projets/liste.html',{
-        'projets':projets,
-        'recherche':recherche
-        })
+
+    statut_filtre = request.GET.get('statut', '').strip()
+    if statut_filtre in ('a_faire', 'en_cours', 'termine'):
+        projets = [p for p in projets if p.statut == statut_filtre] if isinstance(projets, list) \
+            else [p for p in projets if p.statut == statut_filtre]
+
+    return render(request, 'projets/liste.html', {
+        'projets': projets,
+        'recherche': recherche,
+        'statut_filtre': statut_filtre,
+    })
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------------------------------------------- 
+#--------------------------------------------------------------------------------------------------------------------                   
+from django.utils import timezone
+
+from django.utils import timezone
+
 @login_required
 def liste_tache(request, id):
-    projetPer = get_object_or_404(
-        Projet,
-        id=id,
-        id_user=request.user
-    )
-    Tache_projet.actualiser_statuts(
-        queryset=projetPer.taches.all()
-    )
+    projetPer = get_object_or_404(Projet, id=id, id_user=request.user)
+    Tache_projet.actualiser_statuts(queryset=projetPer.taches.all())
     taches = Tache_projet.objects.filter(id_proj=projetPer)
 
     recherche = request.GET.get('q', '').strip()
     if recherche:
         terme = normaliser(recherche)
         taches = [t for t in taches if terme in normaliser(t.intitule)]
+
+    statuts_valides = ('a_faire', 'en_cours', 'terminee')
+    statuts_filtre = [s for s in request.GET.getlist('statut') if s in statuts_valides]
+    if statuts_filtre:
+        taches = [t for t in taches if t.statut in statuts_filtre] if isinstance(taches, list) \
+            else taches.filter(statut__in=statuts_filtre)
+
+    priorites_valides = ('basse', 'normale', 'haute')
+    priorites_filtre = [p for p in request.GET.getlist('priorite') if p in priorites_valides]
+    if priorites_filtre:
+        taches = [t for t in taches if t.priorite in priorites_filtre] if isinstance(taches, list) \
+            else taches.filter(priorite__in=priorites_filtre)
+
+    date_filtre = request.GET.get('date', '').strip()
+    aujourd_hui_seulement = request.GET.get('aujourdhui', '') == '1'
+    if aujourd_hui_seulement:
+        date_filtre = timezone.localdate().isoformat()
+    if date_filtre:
+        taches = [t for t in taches if t.date_realisation.isoformat() == date_filtre] if isinstance(taches, list) \
+            else taches.filter(date_realisation=date_filtre)
+
+    en_retard_seulement = request.GET.get('retard', '') == '1'
+    if en_retard_seulement:
+        maintenant = timezone.localtime()
+        taches = [t for t in taches if t.statut != 'terminee' and maintenant >= t.datetime_fin]
+
     return render(request, 'projets/liste_tache.html', {
         'projet': projetPer,
         'taches': taches,
-        'recherche': recherche,})
+        'recherche': recherche,
+        'statuts_filtre': statuts_filtre,
+        'priorites_filtre': priorites_filtre,
+        'date_filtre': date_filtre,
+        'aujourd_hui_seulement': aujourd_hui_seulement,
+        'en_retard_seulement': en_retard_seulement,
+    })
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------------- 
@@ -103,11 +141,10 @@ def creer_projet(request):
 #-------------------------------------------------------------------------------------------------------------------- 
 @login_required
 def modifier_tache(request, id):
-
     tache = get_object_or_404(
-    Tache_projet,
-    id=id,
-    id_proj__id_user=request.user
+        Tache_projet,
+        id=id,
+        id_proj__id_user=request.user
     )
 
     if request.method == "POST":
@@ -117,10 +154,11 @@ def modifier_tache(request, id):
         tache.heure_fin = request.POST.get('heure_fin')
         tache.resultat_attendu = request.POST.get('resultat_attendu')
         tache.statut = request.POST.get('statut')
+        tache.priorite = request.POST.get('priorite')
         tache.save()
-        return redirect('liste_tache',id=tache.id_proj.id)
+        return redirect('liste_tache', id=tache.id_proj.id)
 
-    return render(request, 'projets/modifier_tache.html',{'tache':tache})
+    return render(request, 'projets/modifier_tache.html', {'tache': tache})
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------------- 

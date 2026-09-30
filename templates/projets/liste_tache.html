@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
     <style>
         body { font-family: 'IBM Plex Sans', sans-serif; }
         .mono { font-family: 'IBM Plex Mono', monospace; }
@@ -41,16 +43,118 @@
                 <p class="mono text-xs uppercase tracking-wider text-[#8A8A82] mb-1">Projet</p>
                 <h1 class="text-2xl font-semibold">{{ projet.intitule }}</h1>
             </div>
-                
+
             <p class="mono text-xs text-[#8A8A82] whitespace-nowrap sm:pb-1">
                 {{ taches|length }} tâche{{ taches|length|pluralize }}
             </p>
         </div>
-        <form method="GET" class="flex-1 min-w-[180px]">
+
+        <!-- RECHERCHE -->
+        <form method="GET" class="flex-1 min-w-[180px] mt-4">
             <input type="text" name="q" value="{{ recherche }}"
                 placeholder="Rechercher une tâche..."
                 class="w-full border border-[#DEDEDA] bg-white px-3 py-2 text-sm text-[#1C1C1A] focus:outline-none focus:border-[#1C1C1A]">
         </form>
+
+<!-- FILTRES STATUT + PRIORITE (multi-sélection, style carré) -->
+<form method="GET" class="mt-3 space-y-3">
+    {% if recherche %}<input type="hidden" name="q" value="{{ recherche }}">{% endif %}
+    {% if date_filtre %}<input type="hidden" name="date" value="{{ date_filtre }}">{% endif %}
+    {% if aujourd_hui_seulement %}<input type="hidden" name="aujourdhui" value="1">{% endif %}
+    {% if en_retard_seulement %}<input type="hidden" name="retard" value="1">{% endif %}
+
+    <div class="flex flex-wrap items-center gap-2">
+        <span class="mono text-[10px] uppercase text-[#8A8A82] tracking-wide mr-1">Statut :</span>
+
+        <label>
+            <input type="checkbox" name="statut" value="a_faire" class="peer sr-only"
+                   {% if 'a_faire' in statuts_filtre %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                À faire
+            </div>
+        </label>
+
+        <label>
+            <input type="checkbox" name="statut" value="en_cours" class="peer sr-only"
+                   {% if 'en_cours' in statuts_filtre %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                En cours
+            </div>
+        </label>
+
+        <label>
+            <input type="checkbox" name="statut" value="terminee" class="peer sr-only"
+                   {% if 'terminee' in statuts_filtre %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                Terminée
+            </div>
+        </label>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+        <span class="mono text-[10px] uppercase text-[#8A8A82] tracking-wide mr-1">Priorité :</span>
+
+        <label>
+            <input type="checkbox" name="priorite" value="haute" class="peer sr-only"
+                   {% if 'haute' in priorites_filtre %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                Haute
+            </div>
+        </label>
+
+        <label>
+            <input type="checkbox" name="priorite" value="normale" class="peer sr-only"
+                   {% if 'normale' in priorites_filtre %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                Normale
+            </div>
+        </label>
+
+        <label>
+            <input type="checkbox" name="priorite" value="basse" class="peer sr-only"
+                   {% if 'basse' in priorites_filtre %}checked{% endif %}
+                   onchange="this.form.submit()">
+            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                Basse
+            </div>
+        </label>
+
+        {% if statuts_filtre or priorites_filtre %}
+        <a href="?{% if recherche %}q={{ recherche }}&{% endif %}{% if date_filtre %}date={{ date_filtre }}{% endif %}"
+           class="mono text-xs text-[#8A8A82] hover:text-[#1C1C1A] underline underline-offset-2 ml-2">
+            Réinitialiser
+        </a>
+        {% endif %}
+    </div>
+</form>
+
+        <!-- FILTRE DATE -->
+        <div class="flex items-center gap-2 mt-2">
+            <input type="text" id="filtre-date" name="date" value="{{ date_filtre }}"
+                placeholder="Filtrer par date..."
+                class="border border-[#DEDEDA] bg-white px-3 py-1.5 text-xs text-[#1C1C1A] focus:outline-none focus:border-[#1C1C1A] w-44">
+
+            <a href="?aujourdhui=1" class="mono text-xs uppercase tracking-wide px-3 py-1.5 border
+                {% if aujourd_hui_seulement %}bg-[#1C1C1A] text-white border-[#1C1C1A]{% else %}border-[#DEDEDA] text-[#8A8A82]{% endif %}">
+                Aujourd'hui
+            </a>
+            <a href="?retard=1" class="mono text-xs uppercase tracking-wide px-3 py-1.5 border
+                {% if en_retard_seulement %}bg-[#B03A2E] text-white border-[#B03A2E]{% else %}border-[#DEDEDA] text-[#8A8A82]{% endif %}">
+                En retard
+            </a>
+            {% if date_filtre %}
+            <a href="?{% if recherche %}q={{ recherche }}&{% endif %}{% if statut_filtre %}statut={{ statut_filtre }}&{% endif %}{% if priorite_filtre %}priorite={{ priorite_filtre }}{% endif %}"
+                class="mono text-xs text-[#8A8A82] hover:text-[#1C1C1A] underline underline-offset-2">
+                Retirer
+            </a>
+            {% endif %}
+        </div>
+
         <!-- LISTE DES TÂCHES -->
         <div class="mt-2">
             {% for tache in taches %}
@@ -60,12 +164,23 @@
                     <span class="mono text-xs text-[#8A8A82] pt-1 w-6 shrink-0">{{ forloop.counter|stringformat:"02d" }}</span>
 
                     <div class="min-w-0">
-                        <div class="flex items-center gap-2 mb-1.5">
+                        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
                             <span class="w-2 h-2 shrink-0
                                 {% if tache.statut == 'terminee' %}bg-[#3E7D4F]
                                 {% elif tache.statut == 'en_cours' %}bg-[#B8862E]
                                 {% else %}bg-[#B0B0A8]{% endif %}">
                             </span>
+                            <span class="mono text-[9px] uppercase px-1.5 py-0.5 shrink-0
+                                {% if tache.priorite == 'haute' %}bg-[#B03A2E] text-white
+                                {% elif tache.priorite == 'basse' %}bg-[#EAEAE5] text-[#8A8A82]
+                                {% else %}bg-[#DEDEDA] text-[#5C5C54]{% endif %}">
+                                {{ tache.get_priorite_display }}
+                            </span>
+                            {% if tache.est_en_retard %}
+                            <span class="mono text-[9px] uppercase px-1.5 py-0.5 shrink-0 bg-[#B03A2E] text-white">
+                                En retard
+                            </span>
+                            {% endif %}
                             <h2 class="font-medium text-base truncate">{{ tache.intitule }}</h2>
                         </div>
 
@@ -99,7 +214,26 @@
         </div>
 
     </div>
-{% load static %}
-<script src="{% static 'novatask/notifications.js' %}"></script>
+
+    {% load static %}
+    <script src="{% static 'novatask/notifications.js' %}"></script>
+
+    <script>
+        flatpickr('#filtre-date', {
+            dateFormat: 'Y-m-d',
+            allowInput: false,
+            onChange: function(selectedDates, dateStr) {
+                const url = new URL(window.location);
+                if (dateStr) {
+                    url.searchParams.set('date', dateStr);
+                    url.searchParams.delete('aujourdhui');
+                } else {
+                    url.searchParams.delete('date');
+                }
+                window.location = url;
+            }
+        });
+    </script>
+
 </body>
 </html>

@@ -105,9 +105,19 @@ class Tache_projet(models.Model):
         A_FAIRE = 'a_faire','A faire'
         EN_COURS = 'en_cours','En cours'
         TERMINEE = 'terminee','Terminee'
+
+    class Priorite(models.TextChoices):
+        BASSE = 'basse', 'Basse'
+        NORMALE = 'normale', 'Normale'
+        HAUTE = 'haute', 'Haute'    
     rappel_envoye = models.BooleanField(default=False)
     num_tache = models.CharField(max_length=100, unique=True, editable=False)
     intitule = models.CharField(max_length=100)
+    priorite = models.CharField(
+        max_length=10,
+        choices=Priorite.choices,
+        default='normale'
+    )
     date_realisation = models.DateField()
     heure_debut = models.TimeField()
     heure_fin = models.TimeField()
@@ -124,6 +134,10 @@ class Tache_projet(models.Model):
     def datetime_debut(self):
         naive = datetime.combine(self.date_realisation, self.heure_debut)
         return timezone.make_aware(naive) if timezone.is_naive(naive) else naive
+
+    @property
+    def est_en_retard(self):
+        return self.statut != 'terminee' and timezone.localtime() >= self.datetime_fin
 
     @property
     def datetime_fin(self):

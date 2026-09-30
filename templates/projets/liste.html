@@ -41,49 +41,77 @@
         }
         .navbtn:hover { background: #1C1C1A; color: #fff; border-color: #1C1C1A; }
         .navbtn:disabled { opacity: 0.25; pointer-events: none; }
+
+        .filtre-btn {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.4rem 0.7rem;
+            border: 1px solid #DEDEDA;
+            color: #8A8A82;
+            white-space: nowrap;
+        }
+        .filtre-btn.active {
+            background: #1C1C1A;
+            color: #fff;
+            border-color: #1C1C1A;
+        }
     </style>
 </head>
-{% load static %}
-<script src="{% static 'novatask/notifications.js' %}"></script>
 <body class="bg-[#FAFAF8] text-[#1C1C1A]">
 
     <!-- HEADER -->
     <div class="fixed top-0 left-0 right-0 z-10 bg-[#FAFAF8] border-b-2 border-[#1C1C1A]">
-        <div class="max-w-3xl mx-auto px-6 py-5 flex items-end justify-between gap-4">
-            <div>
-                <p class="mono text-xs uppercase tracking-wider text-[#8A8A82] mb-1">Nova Org</p>
-                <h1 class="text-xl font-semibold">Liste des projets</h1>
+        <div class="max-w-3xl mx-auto px-6 py-5">
+
+            <div class="flex items-end justify-between gap-4">
+                <div>
+                    <p class="mono text-xs uppercase tracking-wider text-[#8A8A82] mb-1">Nova Org</p>
+                    <h1 class="text-xl font-semibold">Liste des projets</h1>
+                </div>
+                <div class="flex items-center gap-5">
+
+                    <p class="mono text-xs text-[#8A8A82] whitespace-nowrap" id="counter">
+                        -- / --
+                    </p>
+
+                    <a href="{% url 'formulaire' %}"
+                       class="mono text-xs uppercase tracking-wide border border-[#1C1C1A] px-3 py-2 hover:bg-[#1C1C1A] hover:text-white transition-colors whitespace-nowrap">
+                        Nouveau projet
+                    </a>
+
+                    <!-- UTILISATEUR -->
+                    <div class="flex items-center gap-3 pl-5 border-l border-[#DEDEDA]">
+                        <div class="w-7 h-7 rounded-full bg-[#1C1C1A] text-white flex items-center justify-center text-xs font-semibold shrink-0">
+                            {{ request.user.nom|slice:":1"|upper }}
+                        </div>
+                        <div class="leading-tight hidden sm:block">
+                            <p class="text-sm font-medium">{{ request.user.prenom }} {{ request.user.nom }}</p>
+                            <a href="{% url 'deconnexion' %}"
+                               class="mono text-[10px] uppercase tracking-wide text-[#8A8A82] hover:text-[#1C1C1A] underline underline-offset-2">
+                                Se déconnecter
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
             </div>
-            <div class="flex items-center gap-5">
 
-                <p class="mono text-xs text-[#8A8A82] whitespace-nowrap" id="counter">
-                    -- / --
-                </p>
-
-                <a href="{% url 'formulaire' %}"
-                   class="mono text-xs uppercase tracking-wide border border-[#1C1C1A] px-3 py-2 hover:bg-[#1C1C1A] hover:text-white transition-colors whitespace-nowrap">
-                    Nouveau projet
-                </a>
+            <!-- RECHERCHE + FILTRES -->
+            <div class="flex flex-wrap items-center gap-2 mt-4">
                 <form method="GET" class="flex-1 min-w-[180px]">
                     <input type="text" name="q" value="{{ recherche }}"
                         placeholder="Rechercher un projet..."
                         class="w-full border border-[#DEDEDA] bg-white px-3 py-2 text-sm text-[#1C1C1A] focus:outline-none focus:border-[#1C1C1A]">
                 </form>
-                <!-- UTILISATEUR -->
-                <div class="flex items-center gap-3 pl-5 border-l border-[#DEDEDA]">
-                    <div class="w-7 h-7 rounded-full bg-[#1C1C1A] text-white flex items-center justify-center text-xs font-semibold shrink-0">
-                        {{ request.user.nom|slice:":1"|upper }}
-                    </div>
-                    <div class="leading-tight hidden sm:block">
-                        <p class="text-sm font-medium">{{ request.user.prenom }} {{ request.user.nom }}</p>
-                        <a href="{% url 'deconnexion' %}"
-                           class="mono text-[10px] uppercase tracking-wide text-[#8A8A82] hover:text-[#1C1C1A] underline underline-offset-2">
-                            Se déconnecter
-                        </a>
-                    </div>
-                </div>
 
+                <a href="?statut=" class="filtre-btn {% if not statut_filtre %}active{% endif %}">Tous</a>
+                <a href="?statut=a_faire" class="filtre-btn {% if statut_filtre == 'a_faire' %}active{% endif %}">À faire</a>
+                <a href="?statut=en_cours" class="filtre-btn {% if statut_filtre == 'en_cours' %}active{% endif %}">En cours</a>
+                <a href="?statut=termine" class="filtre-btn {% if statut_filtre == 'termine' %}active{% endif %}">Terminé</a>
             </div>
+
         </div>
     </div>
 
@@ -92,7 +120,7 @@
     <button id="nextBtn" class="navbtn" style="right: 24px;" aria-label="Projet suivant">›</button>
 
     <!-- TRACK -->
-    <div id="track" class="pt-20">
+    <div id="track" class="pt-32">
 
         {% for projet in projets %}
         <div class="slide">
@@ -156,6 +184,9 @@
 
     <!-- DOTS -->
     <div id="dots" class="fixed bottom-6 left-0 right-0 flex items-center justify-center gap-2 z-10"></div>
+
+    {% load static %}
+    <script src="{% static 'novatask/notifications.js' %}"></script>
 
     <script>
         const track = document.getElementById('track');

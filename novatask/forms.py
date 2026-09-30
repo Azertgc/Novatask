@@ -68,16 +68,18 @@ class NouvelleTache(forms.ModelForm):
         model = Tache_projet
         fields = [
             'intitule',
-            'id_proj',
+            'priorite',
             'date_realisation',
             'heure_debut',
             'heure_fin',
             'resultat_attendu',
             'fonctionnalite',
             'statut',
+            'id_proj',
         ]
         widgets = {
             'intitule': forms.TextInput(attrs={'class': INPUT_CLASSES}),
+            'priorite': forms.Select(attrs={'class': SELECT_CLASSES}),
             'date_realisation': forms.DateInput(attrs={'type': 'date', 'class': INPUT_CLASSES}),
             'heure_debut': forms.TimeInput(attrs={'type': 'time', 'class': INPUT_CLASSES}),
             'heure_fin': forms.TimeInput(attrs={'type': 'time', 'class': INPUT_CLASSES}),

@@ -24,8 +24,7 @@
         }
     </style>
 </head>
-{% load static %}
-<script src="{% static 'novatask/notifications.js' %}"></script>
+
 <body class="bg-[#FAFAF8] text-[#1C1C1A] min-h-screen">
 
     <div class="max-w-xl mx-auto px-6 py-10 sm:py-14">
@@ -93,6 +92,32 @@
                     </label>
                 </div>
             </div>
+            <div>
+                <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-2">Priorité</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <label>
+                        <input type="radio" name="priorite" value="basse" class="peer sr-only"
+                            {% if tache.priorite == "basse" %}checked{% endif %}>
+                        <div class="mono text-[10px] sm:text-xs uppercase tracking-wide text-center py-2.5 px-1 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                            Basse
+                        </div>
+                    </label>
+                    <label>
+                        <input type="radio" name="priorite" value="normale" class="peer sr-only"
+                            {% if tache.priorite == "normale" %}checked{% endif %}>
+                        <div class="mono text-[10px] sm:text-xs uppercase tracking-wide text-center py-2.5 px-1 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                            Normale
+                        </div>
+                    </label>
+                    <label>
+                        <input type="radio" name="priorite" value="haute" class="peer sr-only"
+                            {% if tache.priorite == "haute" %}checked{% endif %}>
+                        <div class="mono text-[10px] sm:text-xs uppercase tracking-wide text-center py-2.5 px-1 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                            Haute
+                        </div>
+                    </label>
+                </div>
+            </div>
 
             <div class="pt-2 flex flex-col sm:flex-row gap-3">
                 <button type="submit" class="flex-1 mono text-xs uppercase tracking-wide bg-[#1C1C1A] text-white px-5 py-3 hover:bg-black transition-colors">
@@ -106,6 +131,7 @@
         </form>
 
     </div>
-
+{% load static %}
+<script src="{% static 'novatask/notifications.js' %}"></script>
 </body>
 </html>
