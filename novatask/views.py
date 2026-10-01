@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 import json
 
+from django.utils import timezone
 from novatask.services import normaliser
 # Create your views here.
 
@@ -69,9 +70,6 @@ def liste_projet(request):
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------                   
-from django.utils import timezone
-
-from django.utils import timezone
 
 @login_required
 def liste_tache(request, id):
@@ -109,6 +107,15 @@ def liste_tache(request, id):
         maintenant = timezone.localtime()
         taches = [t for t in taches if t.statut != 'terminee' and maintenant >= t.datetime_fin]
 
+    # --- TRI ---
+    tri = request.GET.get('tri', 'date_asc')
+    taches = list(taches)  # uniformise en liste pour trier, que ce soit déjà une liste ou un queryset
+
+    if tri == 'date_desc':
+        taches.sort(key=lambda t: (t.date_realisation, t.heure_debut), reverse=True)
+    else:  # date_asc par défaut
+        taches.sort(key=lambda t: (t.date_realisation, t.heure_debut))
+
     return render(request, 'projets/liste_tache.html', {
         'projet': projetPer,
         'taches': taches,
@@ -118,6 +125,7 @@ def liste_tache(request, id):
         'date_filtre': date_filtre,
         'aujourd_hui_seulement': aujourd_hui_seulement,
         'en_retard_seulement': en_retard_seulement,
+        'tri': tri,
     })
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------

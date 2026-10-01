@@ -154,7 +154,19 @@
             </a>
             {% endif %}
         </div>
-
+        <div class="flex items-center justify-end gap-2 mt-4">
+            <span class="mono text-[10px] uppercase text-[#8A8A82] tracking-wide">Trier :</span>
+            <a href="?{% if recherche %}q={{ recherche }}&{% endif %}{% for s in statuts_filtre %}statut={{ s }}&{% endfor %}{% for p in priorites_filtre %}priorite={{ p }}&{% endfor %}{% if date_filtre %}date={{ date_filtre }}&{% endif %}tri=date_asc"
+            class="mono text-xs uppercase tracking-wide px-3 py-1.5 border
+            {% if tri == 'date_asc' %}bg-[#1C1C1A] text-white border-[#1C1C1A]{% else %}border-[#DEDEDA] text-[#8A8A82] hover:border-[#1C1C1A] hover:text-[#1C1C1A]{% endif %}">
+                Plus ancien
+            </a>
+            <a href="?{% if recherche %}q={{ recherche }}&{% endif %}{% for s in statuts_filtre %}statut={{ s }}&{% endfor %}{% for p in priorites_filtre %}priorite={{ p }}&{% endfor %}{% if date_filtre %}date={{ date_filtre }}&{% endif %}tri=date_desc"
+            class="mono text-xs uppercase tracking-wide px-3 py-1.5 border
+            {% if tri == 'date_desc' %}bg-[#1C1C1A] text-white border-[#1C1C1A]{% else %}border-[#DEDEDA] text-[#8A8A82] hover:border-[#1C1C1A] hover:text-[#1C1C1A]{% endif %}">
+                Plus récent
+            </a>
+        </div>
         <!-- LISTE DES TÂCHES -->
         <div class="mt-2">
             {% for tache in taches %}
