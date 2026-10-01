@@ -28,10 +28,10 @@ AUTHENTICATION_BACKENDS = [
 SECRET_KEY = 'django-insecure-4cd5vz_k*j$g^izo#&*h4u4v=f%%94@yjyfy8*31rt65%y44cm'
 
 # SECURITY WARNING: don't run with debug turned on in production!
+#DEBUG = ('DEBUG',default=False,cast=bool)
 DEBUG = True
-
+#ALLOWED_HOSTS = config('ALLOWED_HOST',cast=lambda v: v.split(','))
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -132,3 +132,12 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+#SECURE_BROWSER_XSS_FILTER = True
+#SECURE_CONTENT_TYPE_NOSNIFF = True
+#X_FRAME_OPTIONS = 'DENY'
+
+# Uniquement si le site tourne en HTTPS (chapitre 28+) :
+#SESSION_COOKIE_SECURE = not DEBUG
+#CSRF_COOKIE_SECURE = not DEBUG
+#SECURE_SSL_REDIRECT = not DEBUG

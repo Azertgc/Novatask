@@ -30,18 +30,18 @@ def deconnexion(request):
     logout(request)
     return redirect('connexion')
 
+from django.contrib.auth import login
+
 def inscription(request):
-    if request.method =='POST':
+    if request.method == 'POST':
         form = InscriptionForm(request.POST)
         if form.is_valid():
-            form.save()
+            utilisateur = form.save()
+            login(request, utilisateur, backend='novatask.backends.CaseInsensitiveModelBackend')
             return redirect('liste_projet')
     else:
         form = InscriptionForm()
-    return render(request, 'utilisateurs/inscription.html', {'form':form})        
-
-def home(request):
-    return HttpResponse("Django Fonctionne")
+    return render(request, 'utilisateurs/inscription.html', {'form': form})
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------------- 
@@ -176,7 +176,7 @@ def modifier_tache(request, id):
         tache.heure_fin = request.POST.get('heure_fin')
         tache.resultat_attendu = request.POST.get('resultat_attendu')
         tache.statut = request.POST.get('statut')
-        tache.priorite = request.POST.get('priorite')
+        tache.priorite = request.POST.get('priorite', tache.priorite)
         tache.save()
         return redirect('liste_tache', id=tache.id_proj.id)
 

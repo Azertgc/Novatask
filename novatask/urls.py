@@ -12,5 +12,6 @@ urlpatterns = [
     path('inscription/', views.inscription, name='inscription'),
     path('connexion/', views.connexion, name='connexion'),
     path('deconnexion/', views.deconnexion, name='deconnexion'),
-    path('api/taches/notifications/', views.taches_notifications_json, name='tache_notifications_json')
+    path('api/taches/notifications/', views.taches_notifications_json, name='tache_notifications_json'),
+    path('api/taches/notifications/', views.taches_notifications_json, name='taches_notifications_json'),
 ]

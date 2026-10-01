@@ -64,18 +64,34 @@ class ProjetForm(forms.ModelForm):
 
 
 class NouvelleTache(forms.ModelForm):
+    # Déclarés explicitement (hors Meta.widgets) pour forcer empty_value=None :
+    # une chaîne vide '' envoyée par le toggle JS doit devenir NULL en base,
+    # sinon la contrainte SQL "soit_a_soit_b_pas_les_deux" est violée même
+    # quand un seul des deux champs est réellement rempli.
+    resultat_attendu = forms.CharField(
+        required=False,
+        empty_value=None,
+        widget=forms.Textarea(attrs={'class': TEXTAREA_CLASSES, 'rows': 3})
+    )
+    fonctionnalite = forms.CharField(
+        required=False,
+        empty_value=None,
+        widget=forms.TextInput(attrs={'class': INPUT_CLASSES})
+    )
+
     class Meta:
         model = Tache_projet
         fields = [
             'intitule',
             'priorite',
+            'id_proj',
             'date_realisation',
             'heure_debut',
             'heure_fin',
             'resultat_attendu',
             'fonctionnalite',
             'statut',
-            'id_proj',
+            
         ]
         widgets = {
             'intitule': forms.TextInput(attrs={'class': INPUT_CLASSES}),
@@ -83,8 +99,6 @@ class NouvelleTache(forms.ModelForm):
             'date_realisation': forms.DateInput(attrs={'type': 'date', 'class': INPUT_CLASSES}),
             'heure_debut': forms.TimeInput(attrs={'type': 'time', 'class': INPUT_CLASSES}),
             'heure_fin': forms.TimeInput(attrs={'type': 'time', 'class': INPUT_CLASSES}),
-            'resultat_attendu': forms.Textarea(attrs={'class': TEXTAREA_CLASSES, 'rows': 3}),
-            'fonctionnalite': forms.TextInput(attrs={'class': INPUT_CLASSES}),
             'statut': forms.Select(attrs={'class': SELECT_CLASSES}),
             'id_proj': forms.Select(attrs={'class': SELECT_CLASSES}),
         }
