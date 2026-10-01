@@ -107,15 +107,27 @@ def liste_tache(request, id):
         maintenant = timezone.localtime()
         taches = [t for t in taches if t.statut != 'terminee' and maintenant >= t.datetime_fin]
 
-    # --- TRI ---
+    # ======================================================
+    # TRI (19.7 + 19.8)
+    # ======================================================
+    # Ordre de poids pour la priorité : plus le nombre est élevé, plus
+    # la priorité est importante. Nécessaire car un tri alphabétique
+    # classerait "haute" avant "normale" à tort.
+    ORDRE_PRIORITE = {'basse': 0, 'normale': 1, 'haute': 2}
+
     tri = request.GET.get('tri', 'date_asc')
-    taches = list(taches)  # uniformise en liste pour trier, que ce soit déjà une liste ou un queryset
+    taches = list(taches)
 
     if tri == 'date_desc':
         taches.sort(key=lambda t: (t.date_realisation, t.heure_debut), reverse=True)
+    elif tri == 'priorite_desc':
+        # Haute priorité en premier
+        taches.sort(key=lambda t: ORDRE_PRIORITE.get(t.priorite, 0), reverse=True)
+    elif tri == 'priorite_asc':
+        # Basse priorité en premier
+        taches.sort(key=lambda t: ORDRE_PRIORITE.get(t.priorite, 0))
     else:  # date_asc par défaut
         taches.sort(key=lambda t: (t.date_realisation, t.heure_debut))
-
     return render(request, 'projets/liste_tache.html', {
         'projet': projetPer,
         'taches': taches,
@@ -126,6 +138,8 @@ def liste_tache(request, id):
         'aujourd_hui_seulement': aujourd_hui_seulement,
         'en_retard_seulement': en_retard_seulement,
         'tri': tri,
+        'statuts_disponibles': [('a_faire', 'À faire'), ('en_cours', 'En cours'), ('terminee', 'Terminée')],
+        'priorites_disponibles': [('haute', 'Haute'), ('normale', 'Normale'), ('basse', 'Basse')],
     })
 #--------------------------------------------------------------------------------------------------------------------
 #--------------------------------------------------------------------------------------------------------------------

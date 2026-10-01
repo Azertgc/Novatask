@@ -13,6 +13,20 @@
         body { font-family: 'IBM Plex Sans', sans-serif; }
         .mono { font-family: 'IBM Plex Mono', monospace; }
     </style>
+    <script>
+    function trierPar(valeur) {
+        document.getElementById('tri-input').value = valeur;
+        document.getElementById('filtres-form').submit();
+    }
+
+    flatpickr('#filtre-date', {
+        dateFormat: 'Y-m-d',
+        allowInput: false,
+        onChange: function(selectedDates, dateStr) {
+            document.getElementById('filtres-form').submit();
+        }
+    });
+    </script>
 </head>
 
 <body class="bg-[#FAFAF8] text-[#1C1C1A] min-h-screen">
@@ -49,124 +63,102 @@
             </p>
         </div>
 
-        <!-- RECHERCHE -->
-        <form method="GET" class="flex-1 min-w-[180px] mt-4">
-            <input type="text" name="q" value="{{ recherche }}"
-                placeholder="Rechercher une tâche..."
-                class="w-full border border-[#DEDEDA] bg-white px-3 py-2 text-sm text-[#1C1C1A] focus:outline-none focus:border-[#1C1C1A]">
-        </form>
+        <form method="GET" id="filtres-form" class="mt-4 space-y-3">
 
-<!-- FILTRES STATUT + PRIORITE (multi-sélection, style carré) -->
-<form method="GET" class="mt-3 space-y-3">
-    {% if recherche %}<input type="hidden" name="q" value="{{ recherche }}">{% endif %}
-    {% if date_filtre %}<input type="hidden" name="date" value="{{ date_filtre }}">{% endif %}
-    {% if aujourd_hui_seulement %}<input type="hidden" name="aujourdhui" value="1">{% endif %}
-    {% if en_retard_seulement %}<input type="hidden" name="retard" value="1">{% endif %}
+    <!-- RECHERCHE -->
+    <input type="text" name="q" value="{{ recherche }}"
+        placeholder="Rechercher une tâche..."
+        class="w-full border border-[#DEDEDA] bg-white px-3 py-2 text-sm text-[#1C1C1A] focus:outline-none focus:border-[#1C1C1A]">
 
+    <!-- STATUT -->
     <div class="flex flex-wrap items-center gap-2">
         <span class="mono text-[10px] uppercase text-[#8A8A82] tracking-wide mr-1">Statut :</span>
+        {% for valeur, libelle in statuts_disponibles %}
+        <label>
+            <input type="checkbox" name="statut" value="{{ valeur }}" class="peer sr-only"
+                   {% if valeur in statuts_filtre %}checked{% endif %}
+                   onchange="document.getElementById('filtres-form').submit()">
+            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                {{ libelle }}
+            </div>
+        </label>
+        {% endfor %}
+    </div>
+
+    <!-- PRIORITE -->
+    <div class="flex flex-wrap items-center gap-2">
+        <span class="mono text-[10px] uppercase text-[#8A8A82] tracking-wide mr-1">Priorité :</span>
+        {% for valeur, libelle in priorites_disponibles %}
+        <label>
+            <input type="checkbox" name="priorite" value="{{ valeur }}" class="peer sr-only"
+                   {% if valeur in priorites_filtre %}checked{% endif %}
+                   onchange="document.getElementById('filtres-form').submit()">
+            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
+                {{ libelle }}
+            </div>
+        </label>
+        {% endfor %}
+    </div>
+
+    <!-- DATE + RACCOURCIS -->
+    <div class="flex flex-wrap items-center gap-2">
+        <input type="text" id="filtre-date" name="date" value="{{ date_filtre }}"
+            placeholder="Filtrer par date..."
+            class="border border-[#DEDEDA] bg-white px-3 py-1.5 text-xs text-[#1C1C1A] focus:outline-none focus:border-[#1C1C1A] w-44">
 
         <label>
-            <input type="checkbox" name="statut" value="a_faire" class="peer sr-only"
-                   {% if 'a_faire' in statuts_filtre %}checked{% endif %}
-                   onchange="this.form.submit()">
+            <input type="checkbox" name="aujourdhui" value="1" class="peer sr-only"
+                   {% if aujourd_hui_seulement %}checked{% endif %}
+                   onchange="document.getElementById('filtres-form').submit()">
             <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
-                À faire
+                Aujourd'hui
             </div>
         </label>
 
         <label>
-            <input type="checkbox" name="statut" value="en_cours" class="peer sr-only"
-                   {% if 'en_cours' in statuts_filtre %}checked{% endif %}
-                   onchange="this.form.submit()">
-            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
-                En cours
-            </div>
-        </label>
-
-        <label>
-            <input type="checkbox" name="statut" value="terminee" class="peer sr-only"
-                   {% if 'terminee' in statuts_filtre %}checked{% endif %}
-                   onchange="this.form.submit()">
-            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
-                Terminée
+            <input type="checkbox" name="retard" value="1" class="peer sr-only"
+                   {% if en_retard_seulement %}checked{% endif %}
+                   onchange="document.getElementById('filtres-form').submit()">
+            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#B03A2E] hover:text-[#B03A2E] peer-checked:bg-[#B03A2E] peer-checked:text-white peer-checked:border-[#B03A2E] transition-colors">
+                En retard
             </div>
         </label>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2">
-        <span class="mono text-[10px] uppercase text-[#8A8A82] tracking-wide mr-1">Priorité :</span>
+    <!-- TRI (champ caché, mis à jour par les boutons ci-dessous) -->
+    <input type="hidden" name="tri" id="tri-input" value="{{ tri }}">
+    <div class="flex items-center gap-2">
+        <span class="mono text-[10px] uppercase text-[#8A8A82] tracking-wide mr-1">Trier :</span>
+        <button type="button" onclick="trierPar('date_asc')"
+            class="mono text-xs uppercase tracking-wide px-3 py-1.5 border
+            {% if tri == 'date_asc' %}bg-[#1C1C1A] text-white border-[#1C1C1A]{% else %}border-[#DEDEDA] text-[#8A8A82] hover:border-[#1C1C1A] hover:text-[#1C1C1A]{% endif %}">
+            Date ↑
+        </button>
+        <button type="button" onclick="trierPar('date_desc')"
+            class="mono text-xs uppercase tracking-wide px-3 py-1.5 border
+            {% if tri == 'date_desc' %}bg-[#1C1C1A] text-white border-[#1C1C1A]{% else %}border-[#DEDEDA] text-[#8A8A82] hover:border-[#1C1C1A] hover:text-[#1C1C1A]{% endif %}">
+            Date ↓
+        </button>
+        <span class="mono text-[10px] text-[#DEDEDA]">|</span>
+        <button type="button" onclick="trierPar('priorite_desc')"
+            class="mono text-xs uppercase tracking-wide px-3 py-1.5 border
+            {% if tri == 'priorite_desc' %}bg-[#1C1C1A] text-white border-[#1C1C1A]{% else %}border-[#DEDEDA] text-[#8A8A82] hover:border-[#1C1C1A] hover:text-[#1C1C1A]{% endif %}">
+            Priorité ↓
+        </button>
+        <button type="button" onclick="trierPar('priorite_asc')"
+            class="mono text-xs uppercase tracking-wide px-3 py-1.5 border
+            {% if tri == 'priorite_asc' %}bg-[#1C1C1A] text-white border-[#1C1C1A]{% else %}border-[#DEDEDA] text-[#8A8A82] hover:border-[#1C1C1A] hover:text-[#1C1C1A]{% endif %}">
+            Priorité ↑
+        </button>
 
-        <label>
-            <input type="checkbox" name="priorite" value="haute" class="peer sr-only"
-                   {% if 'haute' in priorites_filtre %}checked{% endif %}
-                   onchange="this.form.submit()">
-            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
-                Haute
-            </div>
-        </label>
-
-        <label>
-            <input type="checkbox" name="priorite" value="normale" class="peer sr-only"
-                   {% if 'normale' in priorites_filtre %}checked{% endif %}
-                   onchange="this.form.submit()">
-            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
-                Normale
-            </div>
-        </label>
-
-        <label>
-            <input type="checkbox" name="priorite" value="basse" class="peer sr-only"
-                   {% if 'basse' in priorites_filtre %}checked{% endif %}
-                   onchange="this.form.submit()">
-            <div class="mono text-xs uppercase tracking-wide px-3 py-1.5 border border-[#DEDEDA] text-[#8A8A82] cursor-pointer hover:border-[#1C1C1A] hover:text-[#1C1C1A] peer-checked:bg-[#1C1C1A] peer-checked:text-white peer-checked:border-[#1C1C1A] transition-colors">
-                Basse
-            </div>
-        </label>
-
-        {% if statuts_filtre or priorites_filtre %}
-        <a href="?{% if recherche %}q={{ recherche }}&{% endif %}{% if date_filtre %}date={{ date_filtre }}{% endif %}"
-           class="mono text-xs text-[#8A8A82] hover:text-[#1C1C1A] underline underline-offset-2 ml-2">
-            Réinitialiser
+        {% if recherche or statuts_filtre or priorites_filtre or date_filtre or aujourd_hui_seulement or en_retard_seulement %}
+        <a href="{% url 'liste_tache' projet.id %}" class="mono text-xs text-[#8A8A82] hover:text-[#1C1C1A] underline underline-offset-2 ml-2">
+            Réinitialiser tout
         </a>
         {% endif %}
     </div>
+
 </form>
-
-        <!-- FILTRE DATE -->
-        <div class="flex items-center gap-2 mt-2">
-            <input type="text" id="filtre-date" name="date" value="{{ date_filtre }}"
-                placeholder="Filtrer par date..."
-                class="border border-[#DEDEDA] bg-white px-3 py-1.5 text-xs text-[#1C1C1A] focus:outline-none focus:border-[#1C1C1A] w-44">
-
-            <a href="?aujourdhui=1" class="mono text-xs uppercase tracking-wide px-3 py-1.5 border
-                {% if aujourd_hui_seulement %}bg-[#1C1C1A] text-white border-[#1C1C1A]{% else %}border-[#DEDEDA] text-[#8A8A82]{% endif %}">
-                Aujourd'hui
-            </a>
-            <a href="?retard=1" class="mono text-xs uppercase tracking-wide px-3 py-1.5 border
-                {% if en_retard_seulement %}bg-[#B03A2E] text-white border-[#B03A2E]{% else %}border-[#DEDEDA] text-[#8A8A82]{% endif %}">
-                En retard
-            </a>
-            {% if date_filtre %}
-            <a href="?{% if recherche %}q={{ recherche }}&{% endif %}{% if statut_filtre %}statut={{ statut_filtre }}&{% endif %}{% if priorite_filtre %}priorite={{ priorite_filtre }}{% endif %}"
-                class="mono text-xs text-[#8A8A82] hover:text-[#1C1C1A] underline underline-offset-2">
-                Retirer
-            </a>
-            {% endif %}
-        </div>
-        <div class="flex items-center justify-end gap-2 mt-4">
-            <span class="mono text-[10px] uppercase text-[#8A8A82] tracking-wide">Trier :</span>
-            <a href="?{% if recherche %}q={{ recherche }}&{% endif %}{% for s in statuts_filtre %}statut={{ s }}&{% endfor %}{% for p in priorites_filtre %}priorite={{ p }}&{% endfor %}{% if date_filtre %}date={{ date_filtre }}&{% endif %}tri=date_asc"
-            class="mono text-xs uppercase tracking-wide px-3 py-1.5 border
-            {% if tri == 'date_asc' %}bg-[#1C1C1A] text-white border-[#1C1C1A]{% else %}border-[#DEDEDA] text-[#8A8A82] hover:border-[#1C1C1A] hover:text-[#1C1C1A]{% endif %}">
-                Plus ancien
-            </a>
-            <a href="?{% if recherche %}q={{ recherche }}&{% endif %}{% for s in statuts_filtre %}statut={{ s }}&{% endfor %}{% for p in priorites_filtre %}priorite={{ p }}&{% endfor %}{% if date_filtre %}date={{ date_filtre }}&{% endif %}tri=date_desc"
-            class="mono text-xs uppercase tracking-wide px-3 py-1.5 border
-            {% if tri == 'date_desc' %}bg-[#1C1C1A] text-white border-[#1C1C1A]{% else %}border-[#DEDEDA] text-[#8A8A82] hover:border-[#1C1C1A] hover:text-[#1C1C1A]{% endif %}">
-                Plus récent
-            </a>
-        </div>
         <!-- LISTE DES TÂCHES -->
         <div class="mt-2">
             {% for tache in taches %}
