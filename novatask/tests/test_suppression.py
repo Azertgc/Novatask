@@ -77,3 +77,23 @@ class SuppressionCascadeTest(TestCase):
     def test_suppression_projet_supprime_ses_taches(self):
         self.projet.delete()
         self.assertFalse(Tache_projet.objects.filter(id=self.tache.id).exists())
+
+class EntreesUtilisateurSecuriteTest(TestCase):
+    def setUp(self):
+        self.user = Utilisateur.objects.create_user(username='testuser', password='x', nom='N', prenom='P')
+        self.client.login(username='testuser', password='x')
+
+    def test_intitule_avec_script_est_echappe_a_laffichage(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        projet = Projet.objects.create(
+            intitule='<script>alert("xss")</script>',
+            date_debut=timezone.localdate(),
+            date_fin=timezone.localdate() + timedelta(days=30),
+            resultat_attendu='R',
+            description='D',
+            id_user=self.user,
+        )
+        reponse = self.client.get(reverse('liste_projet'))
+        self.assertNotContains(reponse, '<script>alert("xss")</script>')
+        self.assertContains(reponse, '&lt;script&gt;')        
