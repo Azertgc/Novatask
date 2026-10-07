@@ -16,6 +16,12 @@ class ProjetSerializer(serializers.ModelSerializer):
 
 class TacheProjetSerializer(serializers.ModelSerializer):
     est_en_retard = serializers.BooleanField(read_only=True)
+    resultat_attendu = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    fonctionnalite = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    id_proj = serializers.SlugRelatedField(
+        slug_field='id_proj',
+        queryset=Projet.objects.none(),
+    )
 
     class Meta:
         model = Tache_projet
@@ -26,3 +32,18 @@ class TacheProjetSerializer(serializers.ModelSerializer):
             'priorite', 'statut', 'est_en_retard',
         ]
         read_only_fields = ['num_tache']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request:
+            self.fields['id_proj'].queryset = Projet.objects.filter(
+                id_user=request.user
+            )
+
+    def validate(self, data):
+        if data.get('resultat_attendu') == '':
+            data['resultat_attendu'] = None
+        if data.get('fonctionnalite') == '':
+            data['fonctionnalite'] = None
+        return data

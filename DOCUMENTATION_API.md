@@ -54,6 +54,14 @@ urlpatterns = [
 
 Chaque `ViewSet` filtre son `get_queryset()` par `id_user=request.user` (projets) ou `id_proj__id_user=request.user` (tâches) : un utilisateur ne peut jamais lister, consulter, modifier ou supprimer les données d'un autre utilisateur, y compris via l'API.
 
+## Identifiants métier dans les relations (`id_proj`)
+
+Le champ `id_proj` du `TacheProjetSerializer` utilise `SlugRelatedField(slug_field='id_proj', ...)`, et non le `PrimaryKeyRelatedField` généré par défaut. Sans ça, DRF attend la clé primaire technique auto-incrémentée de Django (un entier invisible), pas l'identifiant métier (`P001`) — toute requête envoyant `id_proj: "P001"` échouerait avec `Incorrect type. Expected pk value, received str.`
+
+## Validation avant écriture (pas après)
+
+`perform_create`/`perform_update` sur `TacheProjetViewSet` construisent et valident l'instance (`full_clean()`) **avant** tout appel à `.save()`, plutôt que de sauvegarder puis valider après coup. Une tentative d'écriture invalide déclenche directement la `CheckConstraint` de la base (`IntegrityError` non gérée, erreur 500) avant même que Python n'ait la main — valider après `save()` ne suffit pas quand une contrainte existe au niveau base de données.
+
 ## Endpoints
 
 | Méthode | URL | Action |
@@ -106,6 +114,19 @@ Réponse de liste :
 }
 ```
 
+## Validation XOR résultat/fonctionnalité
+
+Le serializer `TacheProjetSerializer` normalise les chaînes vides (`''`) en `None` pour `resultat_attendu` et `fonctionnalite` avant sauvegarde (méthode `validate()`). Sans ça, un formulaire envoyant l'un des deux champs vide sous forme de `''` (plutôt que `null`) fait échouer la `CheckConstraint soit_a_soit_b_pas_les_deux` au niveau base de données, car une chaîne vide n'est pas `NULL` pour SQLite.
+
+```python
+def validate(self, data):
+    if data.get('resultat_attendu') == '':
+        data['resultat_attendu'] = None
+    if data.get('fonctionnalite') == '':
+        data['fonctionnalite'] = None
+    return data
+```
+
 ## Fichiers du projet
 
 | Fichier | Rôle |
@@ -121,7 +142,7 @@ Réponse de liste :
 python manage.py test novatask.tests.test_api
 ```
 
-Couverture : authentification requise, isolation des données entre utilisateurs, rattachement automatique à l'utilisateur à la création, validation (dates, XOR résultat/fonctionnalité, tâche sur projet d'un autre utilisateur).
+Couverture : authentification requise, isolation des données entre utilisateurs, rattachement automatique à l'utilisateur à la création, validation (dates, XOR résultat/fonctionnalité, tâche sur projet d'un autre utilisateur, normalisation chaîne vide → `None`).
 
 ## Tester manuellement
 

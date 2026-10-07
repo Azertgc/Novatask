@@ -3,15 +3,17 @@ from rest_framework.exceptions import ValidationError
 from django.core.exceptions import ValidationError as DjangoValidationError
 from .models import Projet, Tache_projet
 from .serializers import ProjetSerializer, TacheProjetSerializer
+from .services import normaliser
 
 
 class ProjetViewSet(viewsets.ModelViewSet):
     serializer_class = ProjetSerializer
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'id_proj'
-    
+
     def get_queryset(self):
         return Projet.objects.filter(id_user=self.request.user).order_by('id_proj')
+
     def perform_create(self, serializer):
         projet = serializer.save(id_user=self.request.user)
         try:
@@ -26,32 +28,6 @@ class ProjetViewSet(viewsets.ModelViewSet):
             projet.full_clean()
         except DjangoValidationError as e:
             raise ValidationError(e.message_dict)
-
-
-class TacheProjetViewSet(viewsets.ModelViewSet):
-    serializer_class = TacheProjetSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'num_tache'
-
-    def get_queryset(self):
-        return Tache_projet.objects.filter(id_proj__id_user=self.request.user)
-
-    def perform_create(self, serializer):
-        tache = serializer.save()
-        try:
-            tache.full_clean()
-        except DjangoValidationError as e:
-            tache.delete()
-            raise ValidationError(e.message_dict)
-
-    def perform_update(self, serializer):
-        tache = serializer.save()
-        try:
-            tache.full_clean()
-        except DjangoValidationError as e:
-            raise ValidationError(e.message_dict)
-        
-from .services import normaliser
 
 
 class TacheProjetViewSet(viewsets.ModelViewSet):
@@ -92,16 +68,19 @@ class TacheProjetViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        tache = serializer.save()
+        tache = Tache_projet(**serializer.validated_data)
         try:
             tache.full_clean()
         except DjangoValidationError as e:
-            tache.delete()
             raise ValidationError(e.message_dict)
+        tache.save()
+        serializer.instance = tache
 
     def perform_update(self, serializer):
-        tache = serializer.save()
+        for champ, valeur in serializer.validated_data.items():
+            setattr(serializer.instance, champ, valeur)
         try:
-            tache.full_clean()
+            serializer.instance.full_clean()
         except DjangoValidationError as e:
-            raise ValidationError(e.message_dict)        
+            raise ValidationError(e.message_dict)
+        serializer.instance.save()

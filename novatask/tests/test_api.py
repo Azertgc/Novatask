@@ -107,3 +107,19 @@ class APITacheTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
    
+    def test_creation_tache_avec_chaine_vide_convertie_en_none(self):
+        self.client.login(username='alice', password='test1234')
+        response = self.client.post('/api/taches/', {
+            'id_proj': self.projet1.id_proj,
+            'intitule': 'Tache avec chaine vide',
+            'resultat_attendu': 'Livrer le rapport',
+            'fonctionnalite': '',
+            'date_realisation': date.today(),
+            'heure_debut': '09:00',
+            'heure_fin': '10:00',
+            'priorite': 'normale',
+        })
+        print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        tache = Tache_projet.objects.get(num_tache=response.data['num_tache'])
+        self.assertIsNone(tache.fonctionnalite)   
