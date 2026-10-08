@@ -3,16 +3,26 @@ from .models import *
 from django.contrib.auth.forms import UserCreationForm
 from datetime import date
 
+# Classes Tailwind communes à (presque) tous les widgets du site, pour un
+# rendu visuel homogène sans répéter la même chaîne dans chaque formulaire.
 INPUT_CLASSES = (
     "w-full border border-[#DEDEDA] bg-white px-3 py-2.5 text-sm text-[#1C1C1A] "
     "focus:outline-none focus:border-[#1C1C1A] transition-colors"
 )
 
+# Alias : mêmes classes que INPUT_CLASSES, mais nommés séparément pour
+# rester libres de les faire diverger plus tard (ex: hauteur différente
+# pour un <select> ou un <textarea>) sans toucher aux <input> classiques.
 TEXTAREA_CLASSES = INPUT_CLASSES
 SELECT_CLASSES = INPUT_CLASSES
 
 
 class InscriptionForm(UserCreationForm):
+    # Hérite de UserCreationForm (fourni par Django) plutôt que d'un
+    # simple ModelForm : réutilise sa logique de création de compte
+    # (hashage du mot de passe, vérification password1 == password2...),
+    # tout en la branchant sur le modèle Utilisateur personnalisé du
+    # projet plutôt que sur le User par défaut de Django.
     class Meta:
         model = Utilisateur
         fields = ['username', 'nom', 'prenom', 'password1', 'password2']
@@ -55,6 +65,11 @@ class ProjetForm(forms.ModelForm):
             'date_debut': forms.DateInput(attrs={
                 'type': 'date',
                 'class': INPUT_CLASSES,
+                # min=aujourd'hui : empêche de choisir une date de début
+                # dans le passé directement au niveau du sélecteur du
+                # navigateur. Ne remplace pas la validation serveur dans
+                # Projet.clean() (modifiable via les outils dev du
+                # navigateur), juste un garde-fou côté UX.
                 'min': date.today().isoformat(),
             }),
             'date_fin': forms.DateInput(attrs={'type': 'date', 'class': INPUT_CLASSES}),
@@ -91,7 +106,7 @@ class NouvelleTache(forms.ModelForm):
             'resultat_attendu',
             'fonctionnalite',
             'statut',
-            
+
         ]
         widgets = {
             'intitule': forms.TextInput(attrs={'class': INPUT_CLASSES}),
@@ -100,5 +115,8 @@ class NouvelleTache(forms.ModelForm):
             'heure_debut': forms.TimeInput(attrs={'type': 'time', 'class': INPUT_CLASSES}),
             'heure_fin': forms.TimeInput(attrs={'type': 'time', 'class': INPUT_CLASSES}),
             'statut': forms.Select(attrs={'class': SELECT_CLASSES}),
+            # id_proj : liste déroulante des projets de l'utilisateur, pour
+            # rattacher la nouvelle tâche à l'un d'eux (le queryset proposé
+            # est filtré par utilisateur côté vue, pas ici).
             'id_proj': forms.Select(attrs={'class': SELECT_CLASSES}),
         }
