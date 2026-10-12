@@ -34,5 +34,11 @@ urlpatterns = [
     path('projet/importer/confirmer/', views.confirmer_import_json, name='confirmer_import_json'),
 
     path('projet/<int:id>/supprimer', views.supprimer_projet, name='supprimer_projet'),
+    # ============================================================
+# A coller dans novatask/urls.py, dans urlpatterns = [ ... ]
+# (ajoute cette ligne, par exemple juste à côté de 'supprimer_tache')
+# ============================================================
+
+    path('tache/<int:id>/terminer', views.terminer_tache, name='terminer_tache'),
 ]
 

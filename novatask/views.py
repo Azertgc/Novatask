@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.db import transaction
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.views.decorators.http import require_POST
 
 from .models import Projet, Utilisateur, Tache_projet
 from .forms import ProjetForm, NouvelleTache, InscriptionForm, ImportProjetJSONForm
@@ -766,12 +767,6 @@ def confirmer_import_json(request):
 
     return redirect("liste_projet")
 
-# ============================================================
-# A coller dans novatask/views.py
-# (par exemple juste après supprimer_tache, même logique reprise
-#  pour un Projet : get_object_or_404 filtré sur l'utilisateur
-#  connecté, suppression effective seulement en POST)
-# ============================================================
 
 @login_required
 def supprimer_projet(request, id):
@@ -791,3 +786,22 @@ def supprimer_projet(request, id):
     return render(request, 'projets/confirmation_suppression_projet.html', {
         'projet': projet
     })
+
+
+@login_required
+def terminer_tache(request, id):
+    tache = get_object_or_404(
+        Tache_projet,
+        id=id,
+        id_proj__id_user=request.user
+    )
+
+    if request.method == "POST":
+        # Marquer terminé n'est pas destructif (contrairement à la
+        # suppression) : pas besoin de page de confirmation, juste une
+        # protection POST pour éviter qu'un simple lien GET ou un
+        # rechargement de page ne déclenche l'action.
+        tache.statut = 'terminee'
+        tache.save()
+
+    return redirect('liste_tache', id=tache.id_proj.id)

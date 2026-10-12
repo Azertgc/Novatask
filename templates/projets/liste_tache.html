@@ -202,7 +202,18 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-2 shrink-0 pl-10 sm:pl-0">
+                <div class="flex items-center gap-3 shrink-0 pl-10 sm:pl-0">
+                    
+                    {% if tache.statut != 'terminee' %}
+                    <form method="POST" action="{% url 'terminer_tache' tache.id %}">
+                        {% csrf_token %}
+                        <button type="submit"
+                            class="mono text-xs uppercase tracking-wide border border-[#3E7D4F] text-[#3E7D4F] px-3 py-2 hover:bg-[#3E7D4F] hover:text-white transition-colors">
+                            Terminer
+                        </button>
+                    </form>
+                    {% endif %}
+
                     <a href="{% url 'modifier_tache' tache.id %}"
                        class="mono text-xs uppercase tracking-wide border border-[#1C1C1A] px-3 py-2 hover:bg-[#1C1C1A] hover:text-white transition-colors">
                         Modifier
