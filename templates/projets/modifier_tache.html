@@ -60,11 +60,17 @@
                     <input type="time" name="heure_fin" value="{{ tache.heure_fin|time:'H:i' }}" class="field-input">
                 </div>
             </div>
-
+            {%if tache.resultat_attendu%}
             <div>
                 <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-2">Résultat attendu</label>
                 <textarea name="resultat_attendu" rows="4" class="field-input resize-none">{{ tache.resultat_attendu }}</textarea>
             </div>
+            {%else%}
+            <div>
+                <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-2">fonctionnalite</label>
+                <textarea name="fonctionnalite" rows="4" class="field-input resize-none">{{ tache.fonctionnalite }}</textarea>
+            </div>
+            {%endif%}
 
             <div>
                 <label class="mono text-xs uppercase tracking-wide text-[#8A8A82] block mb-2">Statut</label>

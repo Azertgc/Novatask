@@ -35,26 +35,11 @@ source .nova/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configurer les variables d'environnement
+### 4. Clé secrète et configuration
 
-Copier le fichier d'exemple et renseigner les valeurs :
-
-Windows :
-```
-copy .env.example .env
-```
-
-Linux / macOS :
-```
-cp .env.example .env
-```
-
-Ouvrir `.env` et définir au minimum :
-```
-SECRET_KEY=une-cle-secrete-a-generer
-DEBUG=True
-ALLOWED_HOSTS=127.0.0.1,localhost
-```
+> **État actuel** : `python-decouple` est listé dans `requirements.txt`, mais `config/settings.py` ne l'utilise pas encore — `SECRET_KEY` y est codée en dur, et les lignes `config('DEBUG', ...)` / `config('ALLOWED_HOST', ...)` sont commentées. Il n'y a donc pas de fichier `.env` à créer pour l'instant : rien à configurer à cette étape, le projet fonctionne tel quel en local.
+>
+> **À faire avant un déploiement réel** : externaliser `SECRET_KEY` (et `DEBUG`/`ALLOWED_HOSTS`) dans un fichier `.env` non versionné (déjà prévu dans `.gitignore`), lu via `python-decouple` dans `settings.py`. Cette étape sera à documenter ici une fois branchée.
 
 ### 5. Appliquer les migrations
 
@@ -96,6 +81,8 @@ Un fichier de test en particulier :
 ```
 python manage.py test novatask.tests.test_models
 ```
+
+Autres fichiers disponibles dans `novatask/tests/` : `test_api`, `test_authentification`, `test_creation`, `test_forms`, `test_modification`, `test_notifications`, `test_permissions`, `test_securite`, `test_suppression`, `test_views`.
 
 ## Vérification automatique des échéances (optionnel)
 

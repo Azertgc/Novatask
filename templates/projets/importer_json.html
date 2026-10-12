@@ -1,0 +1,686 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importer un projet — NovaTask</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: #F7F7F4;
+            color: #1C1C1A;
+        }
+
+        .mono {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .panel {
+            background: #FFFFFF;
+            border: 1px solid #E5E5DF;
+        }
+
+        .field label {
+            display: block;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: #77776F;
+        }
+
+        .field input,
+        .field select,
+        .field textarea {
+            width: 100%;
+            margin-top: 7px;
+            padding: 11px 12px;
+            border: 1px solid #D9D9D1;
+            background: #FAFAF8;
+            border-radius: 2px;
+            outline: none;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 14px;
+            color: #1C1C1A;
+        }
+
+        .field input:focus,
+        .field select:focus,
+        .field textarea:focus {
+            border-color: #3E7D4F;
+            box-shadow: 0 0 0 2px rgba(62, 125, 79, 0.10);
+        }
+
+        .upload-zone {
+            border: 1px dashed #B8B9AE;
+            background: #FAFAF8;
+            transition: border-color .2s, background .2s;
+        }
+
+        .upload-zone:hover {
+            border-color: #3E7D4F;
+            background: #F5F9F4;
+        }
+
+        .upload-zone.is-dragover {
+            border-color: #3E7D4F;
+            background: #F0F7EF;
+        }
+
+        /*
+         * Remplace un display:none : un élément display:none n'est jamais
+         * focusable, donc inatteignable au clavier (Tab). Cette technique
+         * masque visuellement l'input natif tout en le gardant dans le
+         * flux de tabulation, pour que le <label> associé reste activable
+         * au clavier.
+         */
+        .input-fichier-cache {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .upload-zone:has(.input-fichier-cache:focus-visible) {
+            border-color: #3E7D4F;
+            box-shadow: 0 0 0 2px rgba(62, 125, 79, 0.18);
+        }
+
+        .task-card {
+            border: 1px solid #E5E5DF;
+            border-left: 3px solid #D9D9D1;
+            background: #FFFFFF;
+            transition: border-left-color .15s;
+        }
+
+        .task-card[data-priorite="haute"] { border-left-color: #DC2626; }
+        .task-card[data-priorite="normale"] { border-left-color: #D97706; }
+        .task-card[data-priorite="basse"] { border-left-color: #9CA3AF; }
+
+        .bascule-champ {
+            display: inline-flex;
+            border: 1px solid #D9D9D1;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .bascule-champ label {
+            padding: 8px 12px;
+            cursor: pointer;
+            color: #77776F;
+            background: #FAFAF8;
+        }
+
+        .bascule-champ input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+        }
+
+        .bascule-champ input:checked + label {
+            background: #1C1C1A;
+            color: #FFFFFF;
+        }
+
+        .bascule-champ input:focus-visible + label {
+            outline: 2px solid #3E7D4F;
+            outline-offset: 2px;
+        }
+
+        button[disabled] {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+
+    <!-- Barre supérieure -->
+    <header class="sticky top-0 z-20 border-b border-[#E5E5DF] bg-white">
+        <div class="max-w-6xl mx-auto px-5 md:px-8 py-4 flex items-center justify-between gap-4">
+            <a href="{% url 'liste_projet' %}" class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-[#1C1C1A] text-white flex items-center justify-center font-semibold text-sm">
+                    N
+                </div>
+                <div>
+                    <p class="font-semibold tracking-tight">NovaTask</p>
+                    <p class="mono text-[10px] uppercase tracking-[0.15em] text-[#77776F]">
+                        Gestion de projets
+                    </p>
+                </div>
+            </a>
+
+            <a href="{% url 'liste_projet' %}"
+               class="mono text-[11px] uppercase tracking-wide border border-[#D9D9D1] px-3 py-2 hover:bg-[#F1F1EC] transition-colors">
+                ← Retour aux projets
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-5 md:px-8 py-8 md:py-12">
+
+        <!-- Titre -->
+        <div class="mb-8">
+            <p class="mono text-xs uppercase tracking-[0.18em] text-[#3E7D4F] mb-3">
+                Importation / JSON
+            </p>
+
+            <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
+                Importer un projet
+            </h1>
+
+            <p class="text-[#77776F] mt-3 max-w-2xl leading-7">
+                Importe un fichier JSON pour préparer ton projet et ses tâches.
+                Modifie les informations si besoin, puis confirme leur enregistrement.
+            </p>
+        </div>
+
+        <!-- Messages Django -->
+        {% if messages %}
+            <div class="space-y-3 mb-6">
+                {% for message in messages %}
+                    <div class="border px-4 py-3 text-sm
+                        {% if message.tags == 'error' %}
+                            border-red-200 bg-red-50 text-red-800
+                        {% else %}
+                            border-[#C9DEC9] bg-[#F0F7EF] text-[#285B35]
+                        {% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Erreurs de validation -->
+        {% if erreurs %}
+            <section class="mb-6 border border-red-200 bg-red-50 p-5">
+                <div class="flex items-start gap-3">
+                    <span class="text-red-700 text-lg">!</span>
+                    <div>
+                        <h2 class="font-semibold text-red-800">
+                            Des erreurs ont été détectées
+                        </h2>
+                        <p class="text-sm text-red-700 mt-1">
+                            Corrige les champs ci-dessous avant de confirmer.
+                        </p>
+                        <ul class="list-disc pl-5 mt-3 space-y-1 text-sm text-red-800">
+                            {% for erreur in erreurs %}
+                                <li>{{ erreur }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+
+        {% if not mode_apercu %}
+
+            <!-- Zone d'importation -->
+            <section class="panel p-5 md:p-8 max-w-3xl">
+                <div class="flex items-start gap-4 mb-7">
+                    <div class="w-11 h-11 bg-[#EDF4EA] text-[#3E7D4F] flex items-center justify-center text-xl">
+                        ↥
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold">Sélectionner un fichier</h2>
+                        <p class="text-sm text-[#77776F] mt-1">
+                            Choisis le fichier JSON contenant le projet et ses tâches.
+                        </p>
+                    </div>
+                </div>
+
+                <form method="post"
+                      enctype="multipart/form-data"
+                      action="{% url 'importer_projet_json' %}"
+                      id="formImportJSON">
+                    {% csrf_token %}
+
+                    <label for="{{ form.fichier.id_for_label }}"
+                           id="zoneUpload"
+                           class="upload-zone block p-8 md:p-10 text-center cursor-pointer">
+                        <div class="text-3xl mb-4 text-[#3E7D4F]" id="iconeUpload">＋</div>
+                        <p class="font-medium" id="texteUpload">
+                            Choisir un fichier JSON ou le glisser ici
+                        </p>
+                        <p class="text-sm text-[#77776F] mt-2" id="sousTexteUpload">
+                            Sélectionne ton fichier depuis ton ordinateur, ou dépose-le dans cette zone.
+                        </p>
+                        <p class="mono text-[10px] text-[#999990] mt-4 uppercase tracking-wider">
+                            Format accepté : .json — 500 Ko maximum
+                        </p>
+
+                        {{ form.fichier }}
+                    </label>
+
+                    {% if form.fichier.errors %}
+                        <div class="mt-3 text-sm text-red-700">
+                            {{ form.fichier.errors }}
+                        </div>
+                    {% endif %}
+
+                    {% if form.non_field_errors %}
+                        <div class="mt-3 text-sm text-red-700">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="mt-6 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                        <p class="text-xs text-[#77776F] leading-5">
+                            Le fichier sera vérifié avant tout enregistrement.
+                        </p>
+
+                        <button type="submit"
+                                id="boutonAnalyser"
+                                class="mono text-xs uppercase tracking-wide bg-[#1C1C1A] text-white px-5 py-3 hover:bg-[#3E7D4F] transition-colors">
+                            Analyser le fichier →
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Étapes -->
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 max-w-3xl">
+                <div class="border border-[#E5E5DF] p-4">
+                    <p class="mono text-xs text-[#3E7D4F]">01 / ANALYSE</p>
+                    <p class="font-medium mt-2 text-sm">Vérification du JSON</p>
+                    <p class="text-xs text-[#77776F] mt-1 leading-5">
+                        Contrôle de la structure et des données.
+                    </p>
+                </div>
+
+                <div class="border border-[#E5E5DF] p-4">
+                    <p class="mono text-xs text-[#3E7D4F]">02 / APERÇU</p>
+                    <p class="font-medium mt-2 text-sm">Modification du contenu</p>
+                    <p class="text-xs text-[#77776F] mt-1 leading-5">
+                        Le projet et ses tâches restent modifiables.
+                    </p>
+                </div>
+
+                <div class="border border-[#E5E5DF] p-4">
+                    <p class="mono text-xs text-[#3E7D4F]">03 / CONFIRMATION</p>
+                    <p class="font-medium mt-2 text-sm">Enregistrement</p>
+                    <p class="text-xs text-[#77776F] mt-1 leading-5">
+                        Création après confirmation explicite.
+                    </p>
+                </div>
+            </section>
+
+        {% endif %}
+
+        {% if mode_apercu and donnees %}
+
+            <!-- Un seul formulaire couvre tout l'aperçu éditable : les
+                 informations du projet, toutes les tâches, et le bouton
+                 de confirmation final. "nombre_taches" permet à la vue
+                 de savoir combien de blocs tache_{i}_* reconstruire. -->
+            <form method="post" action="{% url 'confirmer_import_json' %}" id="formConfirmerImport">
+                {% csrf_token %}
+                <input type="hidden" name="nombre_taches" value="{{ donnees.taches|length }}">
+
+                <!-- En-tête de l'aperçu -->
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+                    <div>
+                        <p class="mono text-xs uppercase tracking-[0.15em] text-[#3E7D4F] mb-2">
+                            Aperçu / Modification
+                        </p>
+                        <h2 class="text-2xl font-semibold">Vérifier et modifier le projet</h2>
+                        <p class="text-sm text-[#77776F] mt-2">
+                            Corrige directement les champs ci-dessous si besoin, puis confirme.
+                        </p>
+                    </div>
+
+                    <div class="border border-[#C9DEC9] bg-[#F0F7EF] px-4 py-3">
+                        <p class="mono text-[10px] uppercase tracking-wider text-[#3E7D4F]">
+                            Tâches détectées
+                        </p>
+                        <p class="text-2xl font-semibold text-[#285B35]">
+                            {{ donnees.taches|length }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Informations du projet (éditables) -->
+                <section class="panel mb-8">
+                    <div class="border-b border-[#E5E5DF] px-5 md:px-7 py-4 flex items-center gap-3">
+                        <div class="w-8 h-8 bg-[#F1F1EC] flex items-center justify-center">01</div>
+                        <h2 class="font-semibold">Informations du projet</h2>
+                    </div>
+
+                    <div class="p-5 md:p-7 space-y-5">
+                        <div class="field">
+                            <label for="projet_intitule">Intitulé du projet</label>
+                            <input type="text" id="projet_intitule" name="projet_intitule"
+                                   value="{{ donnees.projet.intitule }}" required maxlength="100">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div class="field">
+                                <label for="projet_date_debut">Date de début</label>
+                                <input type="date" id="projet_date_debut" name="projet_date_debut"
+                                       value="{{ donnees.projet.date_debut }}" required>
+                            </div>
+                            <div class="field">
+                                <label for="projet_date_fin">Date de fin</label>
+                                <input type="date" id="projet_date_fin" name="projet_date_fin"
+                                       value="{{ donnees.projet.date_fin }}" required>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="projet_description">Description</label>
+                            <textarea id="projet_description" name="projet_description" rows="3">{{ donnees.projet.description }}</textarea>
+                        </div>
+
+                        <div class="field">
+                            <label for="projet_resultat_attendu">Résultat attendu (projet)</label>
+                            <textarea id="projet_resultat_attendu" name="projet_resultat_attendu" rows="3">{{ donnees.projet.resultat_attendu }}</textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Liste des tâches (éditables) -->
+                <section class="mb-8">
+                    <div class="flex items-center justify-between gap-4 mb-4">
+                        <div>
+                            <p class="mono text-xs uppercase tracking-wider text-[#77776F]">
+                                02 / Planification
+                            </p>
+                            <h2 class="text-xl font-semibold mt-1">Liste des tâches</h2>
+                        </div>
+                        <span class="mono text-xs border border-[#E5E5DF] bg-white px-3 py-2">
+                            {{ donnees.taches|length }} tâche(s)
+                        </span>
+                    </div>
+
+                    <div class="space-y-4">
+                        {% for tache in donnees.taches %}
+                            {% with i=forloop.counter0 %}
+                            <article class="task-card"
+                                     data-priorite="{{ tache.priorite }}"
+                                     id="carte-tache-{{ i }}">
+                                <div class="p-5 md:p-6">
+                                    <div class="flex items-start gap-3 mb-5">
+                                        <div class="w-9 h-9 shrink-0 bg-[#F1F1EC] flex items-center justify-center mono text-xs">
+                                            {% if forloop.counter < 10 %}0{% endif %}{{ forloop.counter }}
+                                        </div>
+                                        <p class="text-xs text-[#77776F] mt-2">
+                                            Tâche {{ forloop.counter }} du projet
+                                        </p>
+                                    </div>
+
+                                    <div class="field mb-5">
+                                        <label for="tache_{{ i }}_intitule">Intitulé de la tâche</label>
+                                        <input type="text" id="tache_{{ i }}_intitule"
+                                               name="tache_{{ i }}_intitule"
+                                               value="{{ tache.intitule }}" required maxlength="100">
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                                        <div class="field">
+                                            <label for="tache_{{ i }}_priorite">Priorité</label>
+                                            <select id="tache_{{ i }}_priorite"
+                                                    name="tache_{{ i }}_priorite"
+                                                    class="select-priorite" data-cible="#carte-tache-{{ i }}">
+                                                <option value="basse" {% if tache.priorite == "basse" %}selected{% endif %}>Basse</option>
+                                                <option value="normale" {% if tache.priorite == "normale" %}selected{% endif %}>Normale</option>
+                                                <option value="haute" {% if tache.priorite == "haute" %}selected{% endif %}>Haute</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="field">
+                                            <label for="tache_{{ i }}_statut">Statut</label>
+                                            <select id="tache_{{ i }}_statut" name="tache_{{ i }}_statut">
+                                                <option value="a_faire" {% if tache.statut == "a_faire" %}selected{% endif %}>À faire</option>
+                                                <option value="en_cours" {% if tache.statut == "en_cours" %}selected{% endif %}>En cours</option>
+                                                <option value="terminee" {% if tache.statut == "terminee" %}selected{% endif %}>Terminée</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+                                        <div class="field">
+                                            <label for="tache_{{ i }}_date_realisation">Date</label>
+                                            <input type="date" id="tache_{{ i }}_date_realisation"
+                                                   name="tache_{{ i }}_date_realisation"
+                                                   value="{{ tache.date_realisation }}" required>
+                                        </div>
+                                        <div class="field">
+                                            <label for="tache_{{ i }}_heure_debut">Début</label>
+                                            <input type="time" id="tache_{{ i }}_heure_debut"
+                                                   name="tache_{{ i }}_heure_debut"
+                                                   value="{{ tache.heure_debut }}" required>
+                                        </div>
+                                        <div class="field">
+                                            <label for="tache_{{ i }}_heure_fin">Fin</label>
+                                            <input type="time" id="tache_{{ i }}_heure_fin"
+                                                   name="tache_{{ i }}_heure_fin"
+                                                   value="{{ tache.heure_fin }}" required>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bascule résultat attendu / fonctionnalité : un seul
+                                         des deux champs est envoyé non-vide, l'autre est vidé
+                                         par JS au changement (voir script en bas de page). -->
+                                    <div>
+                                        <p class="mono text-[10px] uppercase tracking-wider text-[#77776F] mb-2">
+                                            Renseigner
+                                        </p>
+                                        <div class="bascule-champ mb-3">
+                                            <input type="radio" name="tache_{{ i }}_type_champ"
+                                                   id="tache_{{ i }}_type_resultat" value="resultat"
+                                                   class="bascule-radio" data-cible="{{ i }}"
+                                                   {% if tache.resultat_attendu or not tache.fonctionnalite %}checked{% endif %}>
+                                            <label for="tache_{{ i }}_type_resultat">Résultat attendu</label>
+
+                                            <input type="radio" name="tache_{{ i }}_type_champ"
+                                                   id="tache_{{ i }}_type_fonctionnalite" value="fonctionnalite"
+                                                   class="bascule-radio" data-cible="{{ i }}"
+                                                   {% if tache.fonctionnalite %}checked{% endif %}>
+                                            <label for="tache_{{ i }}_type_fonctionnalite">Fonctionnalité</label>
+                                        </div>
+
+                                        <div class="field" id="bloc_resultat_{{ i }}"
+                                             {% if tache.fonctionnalite %}style="display:none;"{% endif %}>
+                                            <textarea name="tache_{{ i }}_resultat_attendu" rows="2"
+                                                      placeholder="Résultat attendu de la tâche">{{ tache.resultat_attendu|default:"" }}</textarea>
+                                        </div>
+
+                                        <div class="field" id="bloc_fonctionnalite_{{ i }}"
+                                             {% if not tache.fonctionnalite %}style="display:none;"{% endif %}>
+                                            <input type="text" name="tache_{{ i }}_fonctionnalite"
+                                                   value="{{ tache.fonctionnalite|default:'' }}"
+                                                   placeholder="Fonctionnalité concernée">
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                            {% endwith %}
+                        {% empty %}
+                            <div class="panel p-8 text-center text-sm text-[#77776F]">
+                                Aucune tâche dans ce fichier.
+                            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <!-- Confirmation -->
+                <section class="border border-[#D9D9D1] bg-white p-5 md:p-7">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 shrink-0 bg-[#EDF4EA] text-[#3E7D4F] flex items-center justify-center text-lg">
+                            ✓
+                        </div>
+                        <div>
+                            <h2 class="font-semibold text-lg">Prêt à importer ?</h2>
+                            <p class="text-sm text-[#77776F] leading-6 mt-2">
+                                Les modifications ci-dessus seront prises en compte.
+                                Rien ne sera enregistré tant que tu n'auras pas confirmé.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4 mt-7 pt-5 border-t border-[#E5E5DF]">
+                        <a href="{% url 'importer_projet_json' %}"
+                           class="mono text-xs uppercase tracking-wide text-center border border-[#D9D9D1] px-5 py-3 hover:bg-[#F1F1EC] transition-colors">
+                            Annuler
+                        </a>
+
+                        <button type="submit"
+                                id="boutonConfirmer"
+                                class="w-full sm:w-auto mono text-xs uppercase tracking-wide bg-[#3E7D4F] text-white px-6 py-3 hover:bg-[#2F633D] transition-colors">
+                            Confirmer et enregistrer →
+                        </button>
+                    </div>
+                </section>
+            </form>
+
+        {% endif %}
+
+        <!-- Pied de page -->
+        <footer class="mt-12 pt-5 border-t border-[#E5E5DF] flex flex-col sm:flex-row gap-2 justify-between">
+            <p class="mono text-[10px] uppercase tracking-wider text-[#999990]">
+                NovaTask / Gestion de projets
+            </p>
+            <p class="text-xs text-[#999990]">
+                Organise tes projets, avance étape par étape.
+            </p>
+        </footer>
+
+    </main>
+
+    <script>
+        (function () {
+            "use strict";
+
+            // ---------- Étape d'upload (zone de dépôt du fichier) ----------
+            var zone = document.getElementById("zoneUpload");
+            var input = document.getElementById("{{ form.fichier.id_for_label }}");
+            var texte = document.getElementById("texteUpload");
+            var sousTexte = document.getElementById("sousTexteUpload");
+            var icone = document.getElementById("iconeUpload");
+            var formAnalyser = document.getElementById("formImportJSON");
+            var boutonAnalyser = document.getElementById("boutonAnalyser");
+
+            if (input) {
+                input.classList.add("input-fichier-cache");
+            }
+
+            function afficherFichier(fichier) {
+                if (!fichier) return;
+                icone.textContent = "✓";
+                texte.textContent = fichier.name;
+                sousTexte.textContent =
+                    "Fichier sélectionné (" + Math.round(fichier.size / 1024) + " Ko) — clique sur « Analyser » pour continuer.";
+            }
+
+            if (input) {
+                input.addEventListener("change", function () {
+                    if (input.files && input.files.length > 0) {
+                        afficherFichier(input.files[0]);
+                    }
+                });
+            }
+
+            if (zone && input) {
+                ["dragenter", "dragover"].forEach(function (evt) {
+                    zone.addEventListener(evt, function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        zone.classList.add("is-dragover");
+                    });
+                });
+
+                ["dragleave", "dragend"].forEach(function (evt) {
+                    zone.addEventListener(evt, function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        zone.classList.remove("is-dragover");
+                    });
+                });
+
+                zone.addEventListener("drop", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    zone.classList.remove("is-dragover");
+
+                    var fichiers = e.dataTransfer.files;
+                    if (fichiers && fichiers.length > 0) {
+                        input.files = fichiers;
+                        afficherFichier(fichiers[0]);
+                    }
+                });
+            }
+
+            function desactiverAuSubmit(form, bouton, texteChargement) {
+                if (!form || !bouton) return;
+                form.addEventListener("submit", function () {
+                    bouton.disabled = true;
+                    bouton.textContent = texteChargement;
+                });
+            }
+
+            desactiverAuSubmit(formAnalyser, boutonAnalyser, "Analyse en cours…");
+
+            // ---------- Étape d'aperçu éditable ----------
+            var formConfirmer = document.getElementById("formConfirmerImport");
+            var boutonConfirmer = document.getElementById("boutonConfirmer");
+            desactiverAuSubmit(formConfirmer, boutonConfirmer, "Enregistrement en cours…");
+
+            // Bascule résultat attendu / fonctionnalité par tâche : affiche
+            // le champ choisi, cache et VIDE l'autre (pour que le POST
+            // n'envoie jamais les deux à la fois — la contrainte XOR
+            // serait sinon violée même si visuellement un seul est rempli).
+            document.querySelectorAll(".bascule-radio").forEach(function (radio) {
+                radio.addEventListener("change", function () {
+                    var i = radio.dataset.cible;
+                    var blocResultat = document.getElementById("bloc_resultat_" + i);
+                    var blocFonctionnalite = document.getElementById("bloc_fonctionnalite_" + i);
+                    if (!blocResultat || !blocFonctionnalite) return;
+
+                    if (radio.value === "resultat" && radio.checked) {
+                        blocResultat.style.display = "";
+                        blocFonctionnalite.style.display = "none";
+                        blocFonctionnalite.querySelector("input").value = "";
+                    } else if (radio.value === "fonctionnalite" && radio.checked) {
+                        blocFonctionnalite.style.display = "";
+                        blocResultat.style.display = "none";
+                        blocResultat.querySelector("textarea").value = "";
+                    }
+                });
+            });
+
+            // Accent de couleur de la carte selon la priorité choisie,
+            // mis à jour en direct (purement visuel).
+            document.querySelectorAll(".select-priorite").forEach(function (select) {
+                select.addEventListener("change", function () {
+                    var carte = document.querySelector(select.dataset.cible);
+                    if (carte) carte.dataset.priorite = select.value;
+                });
+            });
+        })();
+    </script>
+
+</body>
+</html>

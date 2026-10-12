@@ -28,4 +28,11 @@ urlpatterns = [
     # Endpoint JSON interrogé par notifications.js (polling, chapitre 17).
     path('api/taches/notifications/', views.taches_notifications_json, name='tache_notifications_json'),
     path('api/taches/notifications/', views.taches_notifications_json, name='taches_notifications_json'),
+
+
+    path('projet/importer/', views.importer_projet_json, name='importer_projet_json'),
+    path('projet/importer/confirmer/', views.confirmer_import_json, name='confirmer_import_json'),
+
+    path('projet/<int:id>/supprimer', views.supprimer_projet, name='supprimer_projet'),
 ]
+

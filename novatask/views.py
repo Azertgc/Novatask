@@ -1,13 +1,21 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
-from .models import Projet, Utilisateur, Tache_projet
-from .forms import ProjetForm, NouvelleTache, InscriptionForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.db import transaction
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+
+from .models import Projet, Utilisateur, Tache_projet
+from .forms import ProjetForm, NouvelleTache, InscriptionForm, ImportProjetJSONForm
+
 import json
 
-from django.utils import timezone
 from novatask.services import normaliser
+
+from datetime import date,datetime
+
 # Create your views here.
 
 def connexion(request):
@@ -343,3 +351,443 @@ def taches_notifications_json(request):
     } for t in taches]
 
     return JsonResponse({'taches': data})
+# ============================================================
+# A coller dans novatask/views.py
+# ============================================================
+#
+# 1) Vérifie que ces imports sont bien présents en haut du fichier
+#    (déjà le cas dans ton views.py actuel, à confirmer) :
+#
+#   import json
+#   from datetime import date, datetime
+#   from django.db import transaction
+#   from django.contrib import messages
+#   from django.core.exceptions import ValidationError
+#   from django.utils import timezone
+#   from .forms import ImportProjetJSONForm   # (en plus des autres formulaires déjà importés)
+#
+# 2) Colle le bloc ci-dessous à la fin de views.py (ou n'importe où après
+#    les imports). Les 4 fonctions doivent rester dans CET ordre, car
+#    construire_donnees_depuis_formulaire / importer_projet_json /
+#    confirmer_import_json appellent valider_donnees_projet_json.
+# ============================================================
+
+
+# ------------------------------------------------------------
+# IMPORT D'UN PROJET ET DE SES TACHES DEPUIS UN FICHIER JSON
+# ------------------------------------------------------------
+
+def valider_donnees_projet_json(donnees):
+    """Vérifie la structure JSON et les règles métier de NovaTask."""
+
+    erreurs = []
+
+    if not isinstance(donnees, dict):
+        return None, ["Le JSON doit contenir un objet principal."]
+
+    projet = donnees.get("projet")
+    taches = donnees.get("taches")
+
+    if not isinstance(projet, dict):
+        erreurs.append("La clé 'projet' doit contenir un objet.")
+
+    if not isinstance(taches, list) or not taches:
+        erreurs.append("La clé 'taches' doit contenir au moins une tâche.")
+
+    if erreurs:
+        return None, erreurs
+
+    # Vérification des champs du projet
+    champs_projet = [
+        "intitule",
+        "date_debut",
+        "date_fin",
+        "description",
+        "resultat_attendu",
+    ]
+
+    for champ in champs_projet:
+        if not isinstance(projet.get(champ), str) or not projet[champ].strip():
+            erreurs.append(f"Le champ projet '{champ}' est obligatoire.")
+
+    if erreurs:
+        return None, erreurs
+
+    # Dates au format ISO : AAAA-MM-JJ
+    try:
+        date_debut = date.fromisoformat(projet["date_debut"])
+        date_fin = date.fromisoformat(projet["date_fin"])
+
+        if date_debut.isoformat() != projet["date_debut"]:
+            raise ValueError
+
+        if date_fin.isoformat() != projet["date_fin"]:
+            raise ValueError
+
+    except (ValueError, TypeError):
+        return None, [
+            "Les dates du projet doivent être au format AAAA-MM-JJ."
+        ]
+
+    aujourd_hui = timezone.localdate()
+
+    if date_debut < aujourd_hui:
+        erreurs.append("La date de début du projet ne peut pas être passée.")
+
+    if date_fin < date_debut:
+        erreurs.append(
+            "La date de fin du projet doit être postérieure "
+            "ou égale à sa date de début."
+        )
+
+    if len(projet["intitule"]) > 100:
+        erreurs.append("L'intitulé du projet ne doit pas dépasser 100 caractères.")
+
+    if len(taches) > 200:
+        erreurs.append("Un fichier ne peut pas contenir plus de 200 tâches.")
+
+    # Validation de chaque tâche
+    taches_validees = []
+
+    for numero, tache in enumerate(taches, start=1):
+        prefixe = f"Tâche {numero}"
+
+        if not isinstance(tache, dict):
+            erreurs.append(f"{prefixe} : les données doivent être un objet.")
+            continue
+
+        champs_obligatoires = [
+            "intitule",
+            "priorite",
+            "date_realisation",
+            "heure_debut",
+            "heure_fin",
+        ]
+
+        for champ in champs_obligatoires:
+            if not isinstance(tache.get(champ), str) or not tache[champ].strip():
+                erreurs.append(f"{prefixe} : le champ '{champ}' est obligatoire.")
+
+        if any(
+            not isinstance(tache.get(c), str) or not tache[c].strip()
+            for c in champs_obligatoires
+        ):
+            continue
+
+        if len(tache["intitule"]) > 100:
+            erreurs.append(f"{prefixe} : l'intitulé dépasse 100 caractères.")
+
+        if tache["priorite"] not in ("basse", "normale", "haute"):
+            erreurs.append(
+                f"{prefixe} : priorité invalide. "
+                "Valeurs acceptées : basse, normale, haute."
+            )
+
+        try:
+            date_tache = date.fromisoformat(tache["date_realisation"])
+
+            if date_tache.isoformat() != tache["date_realisation"]:
+                raise ValueError
+
+            heure_debut = datetime.strptime(
+                tache["heure_debut"], "%H:%M"
+            ).time()
+
+            heure_fin = datetime.strptime(
+                tache["heure_fin"], "%H:%M"
+            ).time()
+
+            # Refuse les formats non canoniques, par exemple 9:00.
+            if heure_debut.strftime("%H:%M") != tache["heure_debut"]:
+                raise ValueError
+
+            if heure_fin.strftime("%H:%M") != tache["heure_fin"]:
+                raise ValueError
+
+        except (ValueError, TypeError):
+            erreurs.append(
+                f"{prefixe} : date au format AAAA-MM-JJ et heures "
+                "au format HH:MM obligatoires."
+            )
+            continue
+
+        if date_tache < aujourd_hui:
+            erreurs.append(f"{prefixe} : la date de réalisation est passée.")
+
+        if not date_debut <= date_tache <= date_fin:
+            erreurs.append(
+                f"{prefixe} : la date doit être comprise dans "
+                "les dates du projet."
+            )
+
+        if heure_fin <= heure_debut:
+            erreurs.append(
+                f"{prefixe} : l'heure de fin doit être après l'heure de début."
+            )
+
+        # Exactement un des deux champs doit être renseigné.
+        fonctionnalite = tache.get("fonctionnalite")
+        resultat = tache.get("resultat_attendu")
+
+        fonctionnalite = fonctionnalite.strip() if isinstance(
+            fonctionnalite, str
+        ) else ""
+
+        resultat = resultat.strip() if isinstance(resultat, str) else ""
+
+        if bool(fonctionnalite) == bool(resultat):
+            erreurs.append(
+                f"{prefixe} : renseigne 'fonctionnalite' ou "
+                "'resultat_attendu', mais pas les deux."
+            )
+
+        tache_normalisee = {
+            "intitule": tache["intitule"].strip(),
+            "priorite": tache["priorite"],
+            "date_realisation": date_tache.isoformat(),
+            "heure_debut": heure_debut.strftime("%H:%M"),
+            "heure_fin": heure_fin.strftime("%H:%M"),
+            "fonctionnalite": fonctionnalite or None,
+            "resultat_attendu": resultat or None,
+            "statut": tache.get("statut", "a_faire"),
+        }
+
+        if tache_normalisee["statut"] not in (
+            "a_faire", "en_cours", "terminee"
+        ):
+            erreurs.append(
+                f"{prefixe} : statut invalide. Valeurs acceptées : "
+                "a_faire, en_cours, terminee."
+            )
+
+        taches_validees.append(tache_normalisee)
+
+    donnees_normalisees = {
+        "projet": {
+            "intitule": projet["intitule"].strip(),
+            "date_debut": date_debut.isoformat(),
+            "date_fin": date_fin.isoformat(),
+            "description": projet["description"].strip(),
+            "resultat_attendu": projet["resultat_attendu"].strip(),
+        },
+        "taches": taches_validees,
+    }
+
+    return donnees_normalisees, erreurs
+
+
+def construire_donnees_depuis_formulaire(post):
+    """
+    Reconstruit la structure JSON brute {"projet": {...}, "taches": [...]}
+    à partir des champs du formulaire d'édition de l'aperçu (request.POST),
+    dans le même format que celui attendu par valider_donnees_projet_json().
+
+    Centraliser ici la lecture du POST évite de dupliquer les règles de
+    validation : qu'on vienne d'un fichier JSON ou d'une édition manuelle
+    dans l'aperçu, les données traversent exactement la même fonction de
+    validation avant d'être enregistrées.
+    """
+    donnees = {
+        "projet": {
+            "intitule": post.get("projet_intitule", ""),
+            "date_debut": post.get("projet_date_debut", ""),
+            "date_fin": post.get("projet_date_fin", ""),
+            "description": post.get("projet_description", ""),
+            "resultat_attendu": post.get("projet_resultat_attendu", ""),
+        },
+        "taches": [],
+    }
+
+    try:
+        nombre_taches = int(post.get("nombre_taches", 0))
+    except (TypeError, ValueError):
+        nombre_taches = 0
+
+    # Garde-fou : la même limite que la règle métier (200 tâches max),
+    # appliquée AVANT la boucle. Sans ça, un champ "nombre_taches" trafiqué
+    # (via les outils dev du navigateur) ferait boucler la vue inutilement
+    # longtemps sur des champs qui n'existent pas dans le POST.
+    nombre_taches = max(0, min(nombre_taches, 200))
+
+    for i in range(nombre_taches):
+        prefixe = f"tache_{i}_"
+        donnees["taches"].append({
+            "intitule": post.get(prefixe + "intitule", ""),
+            "priorite": post.get(prefixe + "priorite", ""),
+            "date_realisation": post.get(prefixe + "date_realisation", ""),
+            "heure_debut": post.get(prefixe + "heure_debut", ""),
+            "heure_fin": post.get(prefixe + "heure_fin", ""),
+            "fonctionnalite": post.get(prefixe + "fonctionnalite", ""),
+            "resultat_attendu": post.get(prefixe + "resultat_attendu", ""),
+            "statut": post.get(prefixe + "statut", "a_faire"),
+        })
+
+    return donnees
+
+
+@login_required
+def importer_projet_json(request):
+    """Reçoit le JSON et affiche un aperçu ÉDITABLE, sans enregistrer en base."""
+
+    if request.method == "POST":
+        form = ImportProjetJSONForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            donnees = form.cleaned_data.get("contenu_json")
+            donnees, erreurs = valider_donnees_projet_json(donnees)
+
+            if erreurs:
+                return render(request, "projets/importer_json.html", {
+                    "form": form,
+                    "erreurs": erreurs,
+                })
+
+            # Le JSON validé reste côté serveur jusqu'à confirmation —
+            # uniquement pour prouver qu'une analyse a eu lieu (voir
+            # confirmer_import_json), plus pour fournir les valeurs
+            # enregistrées : l'utilisateur peut les modifier ensuite.
+            request.session["import_projet_json"] = True
+            request.session.modified = True
+
+            return render(request, "projets/importer_json.html", {
+                "form": ImportProjetJSONForm(),
+                "donnees": donnees,
+                "mode_apercu": True,
+            })
+
+    else:
+        # Un chargement à vide (y compris via le lien "Annuler", qui pointe
+        # vers cette même URL) invalide tout import resté en attente.
+        request.session.pop("import_projet_json", None)
+        form = ImportProjetJSONForm()
+
+    return render(request, "projets/importer_json.html", {
+        "form": form,
+        "mode_apercu": False,
+    })
+
+
+@login_required
+def confirmer_import_json(request):
+    """
+    Revalide puis enregistre le projet et ses tâches, à partir des champs
+    ÉDITÉS dans l'aperçu (request.POST) — pas de la copie figée en session :
+    l'utilisateur a pu corriger intitulés, dates, priorités, etc. avant de
+    confirmer. La session ne sert qu'à vérifier qu'une analyse a bien eu
+    lieu avant d'arriver ici (empêche un POST direct sans passer par
+    l'étape d'analyse).
+    """
+
+    if request.method != "POST":
+        return redirect("importer_projet_json")
+
+    if "import_projet_json" not in request.session:
+        messages.error(
+            request,
+            "Aucun import en attente. Sélectionne de nouveau ton fichier JSON."
+        )
+        return redirect("importer_projet_json")
+
+    donnees_saisies = construire_donnees_depuis_formulaire(request.POST)
+    donnees, erreurs = valider_donnees_projet_json(donnees_saisies)
+
+    if erreurs:
+        # On réaffiche l'aperçu avec EXACTEMENT ce que l'utilisateur a tapé
+        # (donnees_saisies), pas les données d'origine du fichier : il
+        # corrige sur place, sans tout re-téléverser ni tout re-saisir.
+        return render(request, "projets/importer_json.html", {
+            "form": ImportProjetJSONForm(),
+            "erreurs": erreurs,
+            "donnees": donnees_saisies,
+            "mode_apercu": True,
+        })
+
+    try:
+        with transaction.atomic():
+            projet = Projet(
+                intitule=donnees["projet"]["intitule"],
+                date_debut=date.fromisoformat(donnees["projet"]["date_debut"]),
+                date_fin=date.fromisoformat(donnees["projet"]["date_fin"]),
+                description=donnees["projet"]["description"],
+                resultat_attendu=donnees["projet"]["resultat_attendu"],
+                id_user=request.user,
+            )
+
+            projet.full_clean(exclude=["id_proj"])
+            projet.save()
+
+            for donnees_tache in donnees["taches"]:
+                tache = Tache_projet(
+                    intitule=donnees_tache["intitule"],
+                    priorite=donnees_tache["priorite"],
+                    id_proj=projet,
+                    date_realisation=date.fromisoformat(
+                        donnees_tache["date_realisation"]
+                    ),
+                    heure_debut=datetime.strptime(
+                        donnees_tache["heure_debut"], "%H:%M"
+                    ).time(),
+                    heure_fin=datetime.strptime(
+                        donnees_tache["heure_fin"], "%H:%M"
+                    ).time(),
+                    resultat_attendu=donnees_tache["resultat_attendu"],
+                    fonctionnalite=donnees_tache["fonctionnalite"],
+                    statut=donnees_tache["statut"],
+                )
+
+                tache.full_clean(exclude=["num_tache"])
+                tache.save()
+
+    except ValidationError as erreur:
+        details = erreur.messages if hasattr(erreur, "messages") else [str(erreur)]
+        return render(request, "projets/importer_json.html", {
+            "form": ImportProjetJSONForm(),
+            "erreurs": details,
+            "donnees": donnees_saisies,
+            "mode_apercu": True,
+        })
+
+    except Exception:
+        # L'exception est journalisée côté serveur en production.
+        # La transaction annule le projet et les tâches si l'une échoue.
+        messages.error(
+            request,
+            "L'import a échoué. Aucune création partielle n'a été conservée."
+        )
+        return redirect("importer_projet_json")
+
+    request.session.pop("import_projet_json", None)
+
+    messages.success(
+        request,
+        f"Le projet « {projet.intitule} » et ses "
+        f"{len(donnees['taches'])} tâche(s) ont été importés."
+    )
+
+    return redirect("liste_projet")
+
+# ============================================================
+# A coller dans novatask/views.py
+# (par exemple juste après supprimer_tache, même logique reprise
+#  pour un Projet : get_object_or_404 filtré sur l'utilisateur
+#  connecté, suppression effective seulement en POST)
+# ============================================================
+
+@login_required
+def supprimer_projet(request, id):
+    projet = get_object_or_404(
+        Projet,
+        id=id,
+        id_user=request.user
+    )
+
+    if request.method == "POST":
+        # Suppression effective uniquement sur confirmation POST — le GET
+        # ci-dessous affiche juste la page de confirmation, sans rien
+        # supprimer. Supprime aussi en cascade toutes les tâches liées
+        # (comportement par défaut de Django sur une ForeignKey).
+        projet.delete()
+        return redirect('liste_projet')
+    return render(request, 'projets/confirmation_suppression_projet.html', {
+        'projet': projet
+    })

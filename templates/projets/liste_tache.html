@@ -187,11 +187,15 @@
                             {% endif %}
                             <h2 class="font-medium text-base truncate">{{ tache.intitule }}</h2>
                         </div>
-
+                        {%if tache.resultat_attendu%}
                         <p class="text-sm text-[#5C5C54] leading-relaxed max-w-md">
                             {{ tache.resultat_attendu }}
                         </p>
-
+                        {%else%}
+                        <p class="text-sm text-[#5C5C54] leading-relaxed max-w-md">
+                            {{ tache.fonctionnalite }}
+                        </p>
+                        {%endif%}
                         <p class="mono text-xs text-[#8A8A82] mt-2">
                             {{ tache.date_realisation }} · {{ tache.heure_debut|time:"H:i" }}–{{ tache.heure_fin|time:"H:i" }}
                         </p>

@@ -2,6 +2,7 @@ from django import forms
 from .models import *
 from django.contrib.auth.forms import UserCreationForm
 from datetime import date
+import json
 
 # Classes Tailwind communes à (presque) tous les widgets du site, pour un
 # rendu visuel homogène sans répéter la même chaîne dans chaque formulaire.
@@ -120,3 +121,58 @@ class NouvelleTache(forms.ModelForm):
             # est filtré par utilisateur côté vue, pas ici).
             'id_proj': forms.Select(attrs={'class': SELECT_CLASSES}),
         }
+
+# ============================================================
+# A coller dans novatask/forms.py
+# ============================================================
+#
+# Ajoute en haut du fichier, avec les autres imports, si absent :
+#   import json
+#
+# Puis ajoute cette classe (ordre indifférent par rapport aux autres
+# formulaires du fichier) :
+
+
+class ImportProjetJSONForm(forms.Form):
+    fichier = forms.FileField(
+        label="Fichier JSON du projet",
+        widget=forms.ClearableFileInput(attrs={
+            "class": INPUT_CLASSES,
+            "accept": ".json,application/json",
+        }),
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        fichier = cleaned_data.get("fichier")
+
+        if not fichier:
+            return cleaned_data
+
+        if not fichier.name.lower().endswith(".json"):
+            self.add_error("fichier", "Sélectionne un fichier .json.")
+            return cleaned_data
+
+        # Limiter la taille du fichier à 500 Ko.
+        if fichier.size > 500 * 1024:
+            self.add_error(
+                "fichier",
+                "Le fichier JSON ne doit pas dépasser 500 Ko."
+            )
+            return cleaned_data
+
+        try:
+            contenu = fichier.read().decode("utf-8-sig")
+            cleaned_data["contenu_json"] = json.loads(contenu)
+        except UnicodeDecodeError:
+            self.add_error(
+                "fichier",
+                "Le fichier doit être encodé en UTF-8."
+            )
+        except json.JSONDecodeError as erreur:
+            self.add_error(
+                "fichier",
+                f"Le JSON est invalide à la ligne {erreur.lineno}."
+            )
+
+        return cleaned_data

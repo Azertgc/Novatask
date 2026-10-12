@@ -185,7 +185,7 @@ class Tache_projet(models.Model):
     # un champ pris isolément — elle est imposée par clean() ci-dessous
     # et par la CheckConstraint définie dans Meta plus bas.
     resultat_attendu = models.TextField(null=True, blank=True)
-    fonctionnalite = models.CharField(max_length=255, null=True, blank=True)
+    fonctionnalite = models.CharField( null=True, blank=True)
 
     def clean(self):
         # Règle XOR : exactement un des deux champs doit être rempli.

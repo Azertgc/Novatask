@@ -76,10 +76,22 @@
                         -- / --
                     </p>
 
-                    <a href="{% url 'formulaire' %}"
-                       class="mono text-xs uppercase tracking-wide border border-[#1C1C1A] px-3 py-2 hover:bg-[#1C1C1A] hover:text-white transition-colors whitespace-nowrap">
-                        Nouveau projet
-                    </a>
+
+                    <div class="flex items-center gap-2">
+                        <!-- Importer un projet et ses tâches depuis un JSON -->
+                        <a href="{% url 'importer_projet_json' %}"
+                        class="mono text-xs uppercase tracking-wide border border-[#1C1C1A] bg-[#1C1C1A] text-white px-3 py-2 hover:bg-[#3E7D4F] hover:border-[#3E7D4F] transition-colors whitespace-nowrap">
+                            + Tâches par JSON
+                        </a>
+
+                        <!-- Créer un projet manuellement -->
+                        <a href="{% url 'formulaire' %}"
+                        class="mono text-xs uppercase tracking-wide border border-[#1C1C1A] px-3 py-2 hover:bg-[#1C1C1A] hover:text-white transition-colors whitespace-nowrap">
+                            Nouveau projet
+                        </a>
+                    </div>
+
+
 
                     <!-- UTILISATEUR -->
                     <div class="flex items-center gap-3 pl-5 border-l border-[#DEDEDA]">
@@ -165,10 +177,14 @@
                     </div>
                 </div>
 
-                <div class="px-8 pb-8">
+                <div class="px-8 pb-8 flex items-center gap-3">
                     <a href="{% url 'liste_tache' projet.id %}"
                        class="inline-block mono text-xs uppercase tracking-wide border border-[#1C1C1A] px-4 py-2.5 hover:bg-[#1C1C1A] hover:text-white transition-colors">
                         Voir les tâches
+                    </a>
+                    <a href="{% url 'supprimer_projet' projet.id %}"
+                       class="inline-block mono text-xs uppercase tracking-wide border border-[#B03A2E] text-[#B03A2E] px-4 py-2.5 hover:bg-[#B03A2E] hover:text-white transition-colors">
+                        Supprimer
                     </a>
                 </div>
 
@@ -181,6 +197,7 @@
         {% endfor %}
 
     </div>
+
 
     <!-- DOTS -->
     <div id="dots" class="fixed bottom-6 left-0 right-0 flex items-center justify-center gap-2 z-10"></div>
